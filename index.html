@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0e14">
+  <meta name="description" content="My Space — 개인/업무 사이트를 한 곳에서 관리하는 다크 미니멀 대시보드">
+  <title>My Space — Personal Dashboard</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="사이드바">
+      <div class="brand"><span class="brand-mark"><span class="brand-orb"></span></span><span class="brand-type">my<span>space</span><small>PERSONAL DASHBOARD</small></span></div>
+      <div class="side-group-label">WORKSPACES</div>
+      <nav class="side-nav" aria-label="작업 공간">
+        <button class="nav-item active" data-tab="personal" type="button"><span class="nav-icon" data-icon="home"></span><span>개인용</span><span class="nav-shortcut">01</span></button>
+        <button class="nav-item" data-tab="work" type="button"><span class="nav-icon" data-icon="briefcase"></span><span>업무용</span><span class="nav-shortcut">02</span></button>
+      </nav>
+      <div class="side-group-label secondary-group">QUICK ACTIONS</div>
+      <nav class="side-nav" aria-label="빠른 작업">
+        <button class="nav-item secondary" id="show-all" type="button"><span class="nav-icon" data-icon="grid"></span><span>모든 링크</span></button>
+        <button class="nav-item secondary" id="add-site-global" type="button"><span class="nav-icon" data-icon="plus"></span><span>링크 추가</span></button>
+        <button class="nav-item secondary" id="export-json" type="button"><span class="nav-icon" data-icon="download"></span><span>데이터 백업</span></button>
+        <button class="nav-item secondary" id="import-json-trigger" type="button"><span class="nav-icon" data-icon="upload"></span><span>백업 불러오기</span></button>
+      </nav>
+      <div class="side-bottom">
+        <div class="sidebar-note"><span class="note-spark">✧</span><div><strong>Make it yours.</strong><p>매일 쓰는 공간을<br>조금 더 편리하게.</p></div></div>
+        <div class="profile"><div class="profile-avatar">M</div><span><strong>My Workspace</strong><small>Private · Local settings</small></span><span class="status-dot"></span></div>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar">
+        <div class="breadcrumbs"><span>Workspace</span><span class="slash">/</span><strong id="breadcrumb-active">Personal</strong></div>
+        <div class="topbar-right"><span class="today" id="header-date"></span><span class="divider-v"></span><span class="clock" id="live-clock">--:--</span><button class="header-icon" id="open-settings" type="button" aria-label="설정" title="설정"><span data-icon="settings"></span></button></div>
+      </header>
+      <main class="content">
+        <section class="hero" aria-label="소개 및 검색">
+          <div class="hero-copy"><div class="eyebrow"><span class="hero-status"></span> YOUR DIGITAL WORKSPACE <span class="eyebrow-rule"></span> <span id="hero-view">PERSONAL</span></div><h1 id="hero-title">모든 것을, <em>한 곳에.</em></h1><p id="hero-subtitle">자주 가는 사이트부터 나만의 프로젝트까지.<br class="desktop-break"> 필요한 모든 링크를 가장 빠르게 찾아보세요.</p></div>
+          <div class="hero-art" aria-hidden="true"><div class="orb-ring orb-ring-3"></div><div class="orb-ring orb-ring-2"></div><div class="orb-ring orb-ring-1"></div><div class="orb-core"></div><div class="orb-glimmer"></div></div>
+        </section>
+        <div class="search-wrap"><span class="search-icon" data-icon="search"></span><input id="site-search" placeholder="사이트 또는 카테고리 검색..." aria-label="사이트 검색" autocomplete="off"><span class="search-hint">Ctrl K</span><button id="clear-search" class="search-clear hidden" type="button" aria-label="검색 지우기">×</button></div>
+        <div class="section-title-row"><div><h2 id="grid-heading">즐겨찾기 라이브러리</h2><p id="grid-subheading">필요한 도구를 카테고리별로 정리했습니다.</p></div><span class="link-counter" id="link-counter">0 LINKS</span></div>
+        <div class="dashboard-grid" id="dashboard-grid" aria-live="polite"></div>
+        <footer class="footer"><span>© 2026 My Space · Built for everyday use</span><span>Made to grow with you <span class="footer-heart">✦</span></span></footer>
+      </main>
+    </div>
+  </div>
+
+  <dialog id="site-dialog" class="editor-dialog" aria-labelledby="dialog-title"><form id="site-form" method="dialog"><div class="dialog-top"><div><span class="dialog-eyebrow">CUSTOMIZE YOUR SPACE</span><h2 id="dialog-title">링크 추가</h2></div><button class="icon-close" id="close-dialog" type="button" aria-label="닫기">×</button></div><label for="edit-name">사이트 이름</label><input id="edit-name" name="name" placeholder="예: My Portfolio" maxlength="45" required><label for="edit-url">사이트 주소 (https://)</label><input id="edit-url" name="url" type="text" inputmode="url" placeholder="https://example.com"><label for="edit-category">카테고리</label><select id="edit-category" name="category"></select><p class="helper-text" id="form-note">주소가 비어 있으면 빈 슬롯으로 저장됩니다.</p><div class="dialog-actions"><button class="danger-button hidden" type="button" id="delete-site">삭제</button><div class="action-spacer"></div><button type="button" class="ghost-button" id="cancel-dialog">취소</button><button type="submit" class="primary-button">저장하기</button></div></form></dialog>
+  <dialog id="settings-dialog" class="editor-dialog" aria-labelledby="settings-title"><div class="dialog-top"><div><span class="dialog-eyebrow">PREFERENCES</span><h2 id="settings-title">대시보드 설정</h2></div><button class="icon-close" id="close-settings" type="button" aria-label="닫기">×</button></div><p class="settings-copy">링크 변경사항은 현재 브라우저의 로컬 저장소에 보관됩니다. 다른 기기에서도 사용하려면 JSON 백업을 내보낸 뒤 불러오세요.</p><div class="setting-item"><div><strong>데이터 백업</strong><small>현재 사이트 목록을 JSON으로 저장합니다.</small></div><button class="ghost-button" id="export-json-settings" type="button">내보내기</button></div><div class="setting-item"><div><strong>기본값으로 초기화</strong><small>추가·수정한 링크가 모두 초기 상태로 돌아갑니다.</small></div><button class="danger-outline-button" id="reset-data" type="button">초기화</button></div></dialog>
+  <input id="import-file" type="file" accept="application/json,.json" hidden>
+  <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
+  <script src="app.js" defer></script>
+</body>
+</html>
