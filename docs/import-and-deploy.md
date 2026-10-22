@@ -32,7 +32,18 @@ Node 22 이상은 개발/테스트/Worker 재생성에 사용합니다. 생성�
 
 - 기존 **Deploy from a branch → main / root** 방식을 유지할 수도 있습니다. 모든 런타임 파일과 생성된 Worker가 커밋되어 있으므로 main 반영 후 기존 방식으로 게시됩니다. 이 방식은 별도 파일 빌드 없이 동작하며, URL/공개 키는 자산 화면의 연결 설정에서 입력할 수 있습니다.
 - 정적 파일 허용 목록과 GitHub variables 주입을 사용하려면 Settings → Pages → Source를 **GitHub Actions**로 설정합니다. Actions의 **Deploy My Space to Pages**를 main 브랜치에서 수동 실행합니다. 공개 기본 설정을 넣고 싶으면 repository variables에 `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`를 등록합니다. 둘 다 없으면 샘플 모드로 배포됩니다. service_role/secret 키는 거부됩니다.
-- **Checks** 워크플로는 단위/DOM/DB 정책 테스트, Worker 재생성 일치, 프로덕션 의존성 취약점 검사를 수행합니다. 브라우저 검증은 사용자 지정 EGO-LITE에서 별도로 수행합니다.
-- 게시 후 EGO-LITE에서 데스크톱과 390px 모바일로 기존 3개 탭/검색/편집/백업·복원을 확인하고, 자산 탭의 샘플·로그인·로그아웃·합성 CSV/XLSX 업로드·중복 거부를 확인합니다. 인증 전 금융 API 요청이 없어야 하며 로그아웃 후 금액이 지워져야 합니다.
+- **Checks** 워크플로는 단위/DOM/DB 정책 테스트, Worker 재생성 일치, 프로덕션 의존성 취약점 검사와 Playwright/Chromium의 실제 브라우저 검증을 수행합니다. 사용자가 브라우저 도구 제한을 해제하여 Chromium 검증을 사용합니다.
+- 게시 후 데스크톱과 모바일로 기존 3개 탭/검색/편집/백업·복원을 확인하고, 자산 탭의 샘플·로그인·로그아웃·합성 CSV/XLSX 업로드·중복 거부를 확인합니다. 인증 전 금융 API 요청이 없어야 하며 로그아웃 후 금액이 지워져야 합니다.
 
-현재 배포 확인의 외부 선행 조건: EGO-LITE 연결 경로, 실제 Supabase 프로젝트 설정 및 GitHub API/Pages 네트워크 접근. `api.github.com`, `hsh3167.github.io` 접근은 이 클라우드의 프록시에서 403으로 거부되었습니다. Git 인증 기반 기능 브랜치 푸시는 동작합니다. 실제 게시·호스팅 검증을 완료했다고 간주하지 마세요.
+실제 Supabase 프로젝트 검증과 배포 상태 확인에는 프로젝트 설정 및 GitHub API/Pages 네트워크 접근이 필요합니다. `api.github.com`, `hsh3167.github.io` 접근은 이 클라우드의 프록시에서 403으로 거부되었습니다. Git 인증 기반 푸시는 동작합니다. 로컬 정적 서버에서 360/390/768/1440px의 실제 Chromium 검증은 통과했으며, 로그인과 업로드 검증은 합성 Supabase HTTP 응답을 사용했습니다. 실제 게시·호스팅 DB 검증을 완료했다고 간주하지 마세요.
+
+### 브라우저 테스트 재현
+
+```sh
+python3 -m pip install -r requirements-browser.txt
+python3 -m playwright install chromium
+# 별도 터미널에서 정적 서버를 실행한 뒤:
+python3 scripts/browser-smoke.py
+```
+
+시스템 `/usr/bin/chromium`이 있으면 우선 사용하고, 없으면 Playwright Chromium을 사용합니다. `CHROMIUM_EXECUTABLE`로 경로를 지정할 수도 있습니다. 이 스크립트는 격리된 브라우저와 합성 계좌/파일만 사용합니다. 실제 Supabase 호스트에는 연결하지 않습니다. 선택 인자로 검증 대상 사이트 주소를 지정할 수 있습니다.

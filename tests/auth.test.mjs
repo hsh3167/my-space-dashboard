@@ -5,6 +5,12 @@ const config = { url: 'https://example-project.supabase.co', publishableKey: 'sb
 const response = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 const auth = (path, allowed = true) => path.includes('/token?') ? response({ access_token: 'synthetic-token', refresh_token: 'never-store-this', expires_in: 3600 }) : path.endsWith('/user') ? response({ id: 'owner' }) : path.endsWith('/asset_access_allowed') ? response(allowed) : response([]);
 
+test('fetch is called with the global receiver required by browser implementations', async () => {
+  const client = new AssetClient(config, async function (path) { assert.equal(this, globalThis); return auth(path); });
+  await client.login('synthetic@example.test', 'synthetic-password');
+  await client.loadData(); client.lock();
+});
+
 test('locked, denied and expired clients never request financial tables', async () => {
   const calls = []; const client = new AssetClient(config, async path => { calls.push(path); return auth(path, false); });
   await assert.rejects(client.loadData(), /먼저 본인/); assert.equal(calls.length, 0);

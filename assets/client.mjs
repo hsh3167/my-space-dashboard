@@ -16,7 +16,7 @@ export function validateConfig(config) {
 
 export class AssetClient {
   constructor(config, fetcher = globalThis.fetch) {
-    this.config = validateConfig(config); this.fetcher = fetcher;
+    this.config = validateConfig(config); this.fetcher = fetcher.bind(globalThis);
     this.session = null; this.state = 'locked'; this.epoch = 0;
     this.listeners = new Set(); this.pending = new AbortController(); this.timer = null;
   }
