@@ -1,0 +1,52 @@
+/* Scoped to the asset workspace; existing link cards retain their styles. */
+[hidden]{display:none!important}
+.asset-active .search-wrap,.asset-active .section-title-row,.asset-active #dashboard-grid,.asset-active .hero,.asset-active .bear-banner,.asset-active .secondary-group,.asset-active .side-nav[aria-label="빠른 작업"]{display:none!important}
+#asset-workspace{min-width:0}
+.asset-heading{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:12px 0 24px}
+.asset-eyebrow{color:#a6a6c0;font-size:9px;letter-spacing:2px;font-weight:800}
+.asset-heading h1{margin:15px 0 12px;font-size:clamp(26px,3vw,38px)}
+.asset-heading p{color:var(--muted);font-size:12px;margin:0;line-height:1.7}
+.asset-mode-badge{flex-shrink:0;border:1px solid #4d4876;border-radius:20px;color:#c3baff;background:#29243e;padding:8px 13px;font-size:11px}
+.asset-notice{background:#1d2432;border:1px solid #343e52;border-radius:11px;padding:13px 16px;font-size:12px;line-height:1.8;color:#b5bdd1;margin:0 0 22px}
+.asset-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:20px}
+.asset-stat{min-width:0;padding:22px 19px;border:1px solid var(--stroke);border-radius:16px;background:var(--card)}
+.asset-stat-accent{background:linear-gradient(140deg,#302b4c,#1d2230);border-color:#4b436d}
+.asset-stat p{margin:0 0 17px;font-size:12px;color:#a8b0c3}
+.asset-stat strong{font-size:clamp(17px,1.7vw,25px);letter-spacing:-.6px;display:block;overflow-wrap:anywhere}
+.asset-stat small{font-size:10px;color:#929db4;display:block;margin-top:12px;line-height:1.7}
+.asset-panels{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.asset-panel{border:1px solid var(--stroke);border-radius:16px;background:var(--card);padding:24px;min-width:0}
+.asset-wide{grid-column:1/-1}
+.asset-panel-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}
+.asset-panel-heading h3{font-size:14px;margin:0}
+.asset-panel-heading>span{font-size:10px;color:#8d97ad;text-align:right}
+.asset-account{margin-bottom:19px;display:grid;grid-template-columns:1fr auto;gap:9px;align-items:center}
+.asset-account>div:first-child{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}
+.asset-account strong{font-size:12px;overflow-wrap:anywhere}
+.asset-account small{font-size:10px;color:#8793aa}
+.asset-account b{font-size:12px}
+.asset-dot{width:7px;height:7px;display:inline-block;border-radius:50%;flex-shrink:0}
+.asset-meter{grid-column:1/-1;height:5px;background:#262d3a;border-radius:4px;overflow:hidden}
+.asset-meter>span{display:block;height:100%;border-radius:4px}
+.asset-color-0{background:#a398fa}.asset-color-1{background:#69c5cb}.asset-color-2{background:#81a9ed}.asset-color-3{background:#d6ad76}
+.asset-chart{width:100%;height:auto;display:block;margin-top:15px}
+.asset-chart-key,.asset-chart-labels{display:flex;justify-content:space-between;font-size:10px;color:#929db4}
+.asset-chart-key{justify-content:flex-start;gap:17px}.asset-chart-key span:first-child{color:#b5a6ff}.asset-chart-key span:last-child{color:#69c5cb}
+.asset-details{font-size:11px;color:#9da9be;margin-top:16px}.asset-details summary{cursor:pointer}
+.asset-table-wrap{overflow-x:auto;max-width:100%}
+#asset-workspace table{width:100%;border-collapse:collapse;font-size:12px;text-align:left;white-space:nowrap}
+#asset-workspace th{font-size:10px;font-weight:500;color:#8995ad;padding:12px 14px;border-bottom:1px solid #303848}
+#asset-workspace td{padding:17px 14px;border-bottom:1px solid #252d3b;font-variant-numeric:tabular-nums}
+#asset-workspace td:first-child,#asset-workspace th:first-child{padding-left:0}
+#asset-workspace td strong{font-size:12px;font-weight:600}
+#asset-workspace td small{display:block;font-size:10px;color:#7e8ca6;margin-top:6px}
+.asset-positive{color:#82d6bc}.asset-negative{color:#f29aab}
+.asset-payments{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.asset-payment{border:1px solid #303747;background:#1b202d;padding:19px;border-radius:12px;min-width:0}
+.asset-payment-status{font-size:10px;border:1px solid #554973;border-radius:5px;color:#bbabec;padding:4px 7px;display:inline-block}
+.asset-payment-status.is-paid{color:#89cdb5;border-color:#3d5f58}.asset-payment-status.is-overdue{color:#f5b497;border-color:#8c5449}
+.asset-payment h4{font-size:13px;margin:17px 0 8px;overflow-wrap:anywhere}.asset-payment p{color:#8f9db5;font-size:11px;margin:0 0 16px}.asset-payment>strong{font-size:18px;overflow-wrap:anywhere}.asset-payment button{display:block;margin-top:16px}
+.asset-empty{font-size:12px;color:#8e9db8;padding:20px 0;line-height:1.8}
+@media(max-width:1250px){.asset-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.sidebar{flex-wrap:wrap}.side-nav[aria-label="작업 공간"]{flex-wrap:wrap}}
+@media(max-width:650px){.asset-heading{align-items:flex-start}.asset-mode-badge{padding:7px 9px;font-size:10px}.asset-heading p{font-size:11px}.asset-stats{gap:10px}.asset-stat{padding:17px 13px}.asset-stat strong{font-size:19px}.asset-panels{grid-template-columns:1fr}.asset-panel{padding:19px 16px}.asset-payments{grid-template-columns:1fr}.asset-account{grid-template-columns:1fr}.asset-account b{justify-self:end}.asset-notice{font-size:11px}.asset-panel-heading{align-items:flex-start}}

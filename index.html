@@ -8,6 +8,7 @@
   <title>My Space — Personal Dashboard</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="assets/assets.css">
 </head>
 <body>
   <div class="app-shell">
@@ -17,6 +18,7 @@
       <nav class="side-nav" aria-label="작업 공간">
         <button class="nav-item active" data-tab="personal" type="button"><span class="nav-icon" data-icon="home"></span><span>개인용</span><span class="nav-shortcut">01</span></button>
         <button class="nav-item" data-tab="work" type="button"><span class="nav-icon" data-icon="briefcase"></span><span>업무용</span><span class="nav-shortcut">02</span></button>
+        <button class="nav-item" data-tab="assets" type="button"><span class="nav-icon" data-icon="briefcase"></span><span>자산관리</span><span class="nav-shortcut">04</span></button>
       </nav>
       <div class="side-group-label secondary-group">QUICK ACTIONS</div>
       <nav class="side-nav" aria-label="빠른 작업">
@@ -44,6 +46,7 @@
         <div class="search-wrap"><span class="search-icon" data-icon="search"></span><input id="site-search" placeholder="사이트 또는 카테고리 검색..." aria-label="사이트 검색" autocomplete="off"><span class="search-hint">Ctrl K</span><button id="clear-search" class="search-clear hidden" type="button" aria-label="검색 지우기">×</button></div>
         <div class="section-title-row"><div><h2 id="grid-heading">즐겨찾기 라이브러리</h2><p id="grid-subheading">필요한 도구를 카테고리별로 정리했습니다.</p></div><span class="link-counter" id="link-counter">0 LINKS</span></div>
         <div class="dashboard-grid" id="dashboard-grid" aria-live="polite"></div>
+        <section id="asset-workspace" aria-label="자산관리 작업 공간" hidden></section>
         <footer class="footer"><span>© 2026 My Space · Built for everyday use</span><span>Made to grow with you <span class="footer-heart">✦</span></span></footer>
       </main>
     </div>
@@ -54,5 +57,6 @@
   <input id="import-file" type="file" accept="application/json,.json" hidden>
   <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
   <script src="app.js" defer></script>
+  <script type="module" src="assets/workspace.mjs"></script>
 </body>
 </html>

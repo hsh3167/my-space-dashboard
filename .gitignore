@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.*
+!.env.example
+assets-config.local.js
+private/
+uploads/
+*.csv
+*.xlsx
+*.xls
+*.ofx
+*.qfx
+*.log
+coverage/
+test-results/
+playwright-report/
