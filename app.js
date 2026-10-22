@@ -34,10 +34,12 @@ const CATEGORY_META = {
  social:{label:'소셜 & 커뮤니케이션',sub:'연결하고 소통하기',icon:'users',accent:'rose'},
  media:{label:'미디어',sub:'좋아하는 콘텐츠 즐기기',icon:'play',accent:'amber'},
  storage:{label:'클라우드 저장소',sub:'언제 어디서든 파일에 접근',icon:'cloud',accent:'blue'},
- workapps:{label:'업무 핵심 도구',sub:'업무에 필요한 사이트',icon:'briefcase',accent:'purple'}
+ workapps:{label:'업무 핵심 도구',sub:'메신저, 일정, 메일과 문서',icon:'briefcase',accent:'purple'},
+ workparts:{label:'부품 구매 사이트',sub:'부품 검색 및 가공품 견적',icon:'grid',accent:'teal'},
+ worksystems:{label:'회사 시스템 사이트',sub:'필요한 사내 시스템을 직접 등록하세요',icon:'layers',accent:'blue'}
 };
 const PERSONAL_IDS=['portal','ai','dev','projects','social','media','storage'];
-const WORK_IDS=['workapps'];
+const WORK_IDS=['workapps','workparts','worksystems'];
 function defaults(){return {
  office:[],
  portal:[site('naver','네이버','https://www.naver.com','N','#4cdb96','#203d34'),site('google','Google','https://www.google.com','G','#8ebeff','#263752')],
@@ -47,7 +49,9 @@ function defaults(){return {
  social:[site('gmail-personal','Gmail','https://mail.google.com','M','#e78a8a','#442b37'),site('linkedin','LinkedIn','https://www.linkedin.com','in','#7db9ef','#233a50'),site('navercafe','네이버 카페','https://cafe.naver.com','C','#75daa7','#234133')],
  media:[site('netflix','Netflix','https://www.netflix.com','N','#f17580','#48252e'),site('coupang','쿠팡플레이','https://www.coupangplay.com','C','#90a8ef','#293451'),site('youtube','YouTube','https://www.youtube.com','▶','#f38d89','#4b2c34')],
  storage:[site('gdrive-personal','Google Drive','https://drive.google.com','▲','#9bd3a5','#294035'),site('mybox','네이버 MYBOX','https://mybox.naver.com','☁','#8bc4ef','#293c4a')],
- workapps:[site('slack','Slack','https://app.slack.com/client','S','#cfacff','#392d4b'),site('gcal','Google Calendar','https://calendar.google.com','31','#91b8ff','#263855'),site('gmail-work','Gmail','https://mail.google.com','M','#e78a8a','#442b37'),site('gdrive-work','Google Drive','https://drive.google.com','▲','#9bd3a5','#294035')]
+ workapps:[site('slack','Slack','https://app.slack.com/client','S','#cfacff','#392d4b'),site('gcal','Google Calendar','https://calendar.google.com','31','#91b8ff','#263855'),site('gmail-work','Gmail','https://mail.google.com','M','#e78a8a','#442b37'),site('gdrive-work','Google Drive','https://drive.google.com','▲','#9bd3a5','#294035')],
+ workparts:[site('misumi','MISUMI','https://www.misumi.co.kr/','M','#9ec6ff','#273b54'),site('meviy','meviy','https://meviy.misumi-ec.com/ko-kr/','m','#98e0c4','#1f423d')],
+ worksystems:[]
 };}
 function loadData(){try{const stored=JSON.parse(localStorage.getItem(STORAGE_KEY));if(stored && typeof stored==='object' && !Array.isArray(stored)){const base=defaults();Object.keys(base).forEach(k=>{if(Array.isArray(stored[k]))base[k]=stored[k].filter(x=>x&&typeof x.id==='string'&&typeof x.name==='string').map(x=>({id:x.id.slice(0,80),name:x.name.slice(0,45),url:typeof x.url==='string'?x.url.slice(0,500):'',initial:typeof x.initial==='string'?x.initial.slice(0,3):'↗',color:typeof x.color==='string'&&/^#[0-9a-f]{6}$/i.test(x.color)?x.color:'#b7baff',bg:typeof x.bg==='string'&&/^#[0-9a-f]{6}$/i.test(x.bg)?x.bg:'#2b2e41'})).slice(0,100);});return base;}}catch(e){console.warn('Local data could not be loaded',e);}return defaults();}
 let data=loadData(),currentTab=(['work','office'].includes(new URLSearchParams(location.search).get('view'))?new URLSearchParams(location.search).get('view'):'personal'),query='',editing=null,toastTimer;
@@ -63,12 +67,12 @@ function projectItem(item){const url=isSafeUrl(item.url)?item.url:null;if(!url)r
 function card(category){let items=filteredItems(category);if(query && items.length===0)return '';
 const type=category==='projects'?' projects':'';
 let body=category==='projects'?`<div class="projects-list">${items.map(projectItem).join('')}</div>`:`<div class="site-list">${items.map(x=>siteRow(x,category)).join('')}</div>`;
-return `<section class="section-card${type}">${cardHeader(category,items.length)}${body}</section>`;}
-function workCard(item){const url=isSafeUrl(item.url)?item.url:null;return `<section class="section-card work-card">${cardHeader('workapps',data.workapps.length)}<a class="work-tile" href="${esc(url||'#')}" ${url?'target="_blank" rel="noopener noreferrer"':'data-empty="true"'} data-id="${esc(item.id)}" data-cat="workapps">${iconLogo(item)}<span><strong>${esc(item.name)}</strong><small>${esc(domain(item.url))}</small></span><span class="external">${icon('external')}</span></a><button style="margin-top:18px" class="site-edit" type="button" data-action="edit" data-id="${esc(item.id)}" data-cat="workapps" title="${esc(item.name)} 수정">··· 편집</button></section>`;}
-function render(){const isWork=currentTab==='work',isOffice=currentTab==='office';document.querySelector('.hero').hidden=isWork;document.querySelector('.bear-banner').hidden=!isWork;document.querySelectorAll('[data-tab]').forEach(b=>{b.classList.toggle('active',b.dataset.tab===currentTab);b.setAttribute('aria-pressed',String(b.dataset.tab===currentTab));});$('#breadcrumb-active').textContent=isWork?'Work':'Personal';$('#hero-view').textContent=isWork?'WORK':'PERSONAL';$('#hero-title').innerHTML=isWork?'오늘의 업무를, <em>더 간결하게.</em>':'모든 것을, <em>한 곳에.</em>';$('#hero-subtitle').innerHTML=isWork?'Slack부터 일정과 파일까지.<br class="desktop-break"> 업무에 필요한 도구에 바로 접근하세요.':'자주 가는 사이트부터 나만의 프로젝트까지.<br class="desktop-break"> 필요한 모든 링크를 가장 빠르게 찾아보세요.';$('#grid-heading').textContent=isWork?'업무용 워크스페이스':'즐겨찾기 라이브러리';$('#grid-subheading').textContent=isWork?'오늘의 업무를 위한 빠른 실행 도구입니다.':'필요한 도구를 카테고리별로 정리했습니다.';
+if(!query && WORK_IDS.includes(category) && items.length===0)body=`<div class="work-empty"><p>아직 등록된 사이트가 없습니다.</p><button type="button" data-action="add" data-cat="${category}">+ 사이트 추가하기</button></div>`;
+return `<section class="section-card${type}${WORK_IDS.includes(category)?' work-category':''}">${cardHeader(category,items.length)}${body}</section>`;}
+function render(){const isWork=currentTab==='work',isOffice=currentTab==='office';document.querySelector('.hero').hidden=isWork;document.querySelector('.bear-banner').hidden=!isWork;document.querySelectorAll('[data-tab]').forEach(b=>{b.classList.toggle('active',b.dataset.tab===currentTab);b.setAttribute('aria-pressed',String(b.dataset.tab===currentTab));});$('#breadcrumb-active').textContent=isWork?'Work':'Personal';$('#hero-view').textContent=isWork?'WORK':'PERSONAL';$('#hero-title').innerHTML=isWork?'오늘의 업무를, <em>더 간결하게.</em>':'모든 것을, <em>한 곳에.</em>';$('#hero-subtitle').innerHTML=isWork?'Slack부터 일정과 파일까지.<br class="desktop-break"> 업무에 필요한 도구에 바로 접근하세요.':'자주 가는 사이트부터 나만의 프로젝트까지.<br class="desktop-break"> 필요한 모든 링크를 가장 빠르게 찾아보세요.';$('#grid-heading').textContent=isWork?'업무용 워크스페이스':'즐겨찾기 라이브러리';$('#grid-subheading').textContent=isWork?'핵심 도구, 부품 구매, 회사 시스템을 한 곳에서 관리하세요.':'필요한 도구를 카테고리별로 정리했습니다.';
 if(isOffice){$('#breadcrumb-active').textContent='AI Office';$('#hero-view').textContent='AI OFFICE';$('#hero-title').innerHTML='AI 사무실';$('#hero-subtitle').innerHTML='AI와 함께 일하는 나만의 공간.<br class="desktop-break"> 사용할 도구와 프로젝트를 이곳에 모아보세요.';$('#grid-heading').textContent='AI 사무실';$('#grid-subheading').textContent='사무실에서 사용할 링크를 추가해 보세요.';}
 const categories=isOffice?['office']:(isWork?WORK_IDS:PERSONAL_IDS);let allItems=categories.flatMap(cat=>data[cat]||[]),activeItems=allItems.filter(x=>isSafeUrl(x.url));$('#link-counter').textContent=`${activeItems.length} LINKS`;
-let html=isWork?`<div class="work-grid dashboard-grid" style="display:contents">${filteredItems('workapps').map(workCard).join('')}</div>`:categories.map(card).join('');
+let html=categories.map(card).join('');
 if(!query&&!isWork&&!isOffice)html+=`<section class="section-card nudge"><div class="nudge-icon">✧</div><h3>당신만의 공간으로<br>채워 보세요.</h3><p>사이트를 추가하거나 원하는 이름과<br>주소로 변경할 수 있습니다.</p><button type="button" data-action="add" data-cat="projects">개인 사이트 추가하기 →</button></section>`;
 $('#dashboard-grid').classList.toggle('work-grid',isWork);$('#dashboard-grid').innerHTML=html||`<div class="empty-search"><h3>검색 결과가 없습니다.</h3><p>다른 검색어를 입력하거나 검색어를 지워보세요.</p></div>`;
 $('#clear-search').classList.toggle('hidden',!query);}
