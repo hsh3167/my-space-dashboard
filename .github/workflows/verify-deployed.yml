@@ -1,0 +1,31 @@
+name: Verify deployed My Space
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-browser.txt
+      - run: python -m pip install -r requirements-browser.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Verify public Pages with synthetic data only
+        run: python scripts/browser-smoke.py https://hsh3167.github.io/my-space-dashboard
+      - name: Save synthetic-data screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployed-browser-screenshots
+          path: /tmp/myspace-browser-*/*.png
+          if-no-files-found: ignore
