@@ -47,6 +47,16 @@
 .asset-payment-status.is-paid{color:#89cdb5;border-color:#3d5f58}.asset-payment-status.is-overdue{color:#f5b497;border-color:#8c5449}
 .asset-payment h4{font-size:13px;margin:17px 0 8px;overflow-wrap:anywhere}.asset-payment p{color:#8f9db5;font-size:11px;margin:0 0 16px}.asset-payment>strong{font-size:18px;overflow-wrap:anywhere}.asset-payment button{display:block;margin-top:16px}
 .asset-empty{font-size:12px;color:#8e9db8;padding:20px 0;line-height:1.8}
+.asset-mode-actions,.asset-session{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.asset-session{font-size:11px;color:#a1b0c6;border:1px solid #354453;border-radius:11px;padding:14px}.asset-session>span{flex:1;min-width:180px}
+.asset-message{font-size:12px;color:#e5c39b;line-height:1.8;overflow-wrap:anywhere}.asset-message:empty{display:none}
+.asset-login{margin-bottom:20px}.asset-login h3{font-size:17px}.asset-login p,.asset-form p{font-size:11px;color:#95a4bc;line-height:1.8}.asset-login details{margin-top:20px;font-size:12px;color:#bbc5d9}.asset-login summary,.asset-tools summary{cursor:pointer;padding:8px 0}
+.asset-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:end;margin:16px 0}
+.asset-form label{font-size:11px;color:#aebbd1;display:grid;gap:8px;min-width:0}
+.asset-form input,.asset-form select{height:42px;padding:8px 12px;min-width:0;width:100%;background:#101621;border:1px solid #3b4457;border-radius:8px;color:#e5e9f4}
+.asset-form>p{grid-column:1/-1;margin:0}.asset-form button{min-height:42px}.asset-form button:disabled{opacity:.5;cursor:wait}
+.asset-tools{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}.asset-tools>details{min-width:0;background:#171d29;border:1px solid #313c4f;border-radius:12px;padding:12px 18px;color:#bdc6da;font-size:12px}
+@media(max-width:650px){.asset-tools,.asset-form{grid-template-columns:1fr}}
 @media(max-width:1250px){.asset-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.sidebar{flex-wrap:wrap}.side-nav[aria-label="작업 공간"]{flex-wrap:wrap}}
 @media(max-width:650px){.asset-heading{align-items:flex-start}.asset-mode-badge{padding:7px 9px;font-size:10px}.asset-heading p{font-size:11px}.asset-stats{gap:10px}.asset-stat{padding:17px 13px}.asset-stat strong{font-size:19px}.asset-panels{grid-template-columns:1fr}.asset-panel{padding:19px 16px}.asset-payments{grid-template-columns:1fr}.asset-account{grid-template-columns:1fr}.asset-account b{justify-self:end}.asset-notice{font-size:11px}.asset-panel-heading{align-items:flex-start}}

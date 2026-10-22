@@ -15,3 +15,7 @@
 ## 1단계 검증
 
 `npm test`: 7개 통과 (집계/차트/출력 이스케이프 및 기존 탭·검색·링크 생성/수정/삭제·백업·딥링크 DOM 회귀). `node --check app.js`, `git diff --check` 통과. 실제 브라우저/모바일 렌더링은 EGO-LITE 연결 전이므로 미검증.
+
+## 2단계 검증
+
+인증 전/다른 사용자/익명 금융 조회 차단, 로그아웃 중 지연 응답 무효화, 비밀 키 거부 및 DOM 로그인 경계 테스트 추가. PGlite의 PostgreSQL 엔진에서 실제 마이그레이션/RLS 정책을 실행했다. `npm test`: 19개 통과. 실제 Supabase 프로젝트/계정이 없어 호스팅 DB·실제 Auth 검증은 미실행. EGO-LITE 검증도 연결 대기. 사용자 외부 설정 절차는 `docs/supabase-setup.md` 참조.
