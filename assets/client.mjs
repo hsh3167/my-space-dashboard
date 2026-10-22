@@ -84,6 +84,11 @@ export class AssetClient {
   }
   saveAccount(account) { return this.request('rpc/save_asset_account', { method: 'POST', body: { p_label: account.label, p_kind: account.kind, p_balance: account.balance, p_debt: account.debt } }); }
   savePayment(payment) { return this.request('asset_payments', { method: 'POST', body: payment }); }
+  importHoldings({ accountId, asOf, positions, cash }) {
+    // Explicit projection ensures no filename, raw cell, metadata, account number or File can leave the browser.
+    const clean = positions.map(({ name, symbol, quantity, market_value, cost_basis }) => ({ name, symbol, quantity, market_value, cost_basis }));
+    return this.request('rpc/import_asset_holdings', { method: 'POST', body: { p_account_id: accountId, p_as_of: asOf, p_positions: clean, p_cash: cash } });
+  }
   markPayment(id, status) {
     if (!/^[0-9a-f-]{36}$/i.test(id) || !['paid', 'scheduled'].includes(status)) throw new Error('납부 일정을 확인하세요.');
     return this.request(`asset_payments?id=eq.${id}`, { method: 'PATCH', body: { status } });

@@ -3,6 +3,7 @@ import { dashboardHTML } from './dashboard.mjs';
 import { ACCOUNT_KINDS, escapeHTML as e } from './model.mjs';
 import { AssetClient, validateConfig } from './client.mjs';
 import defaultConfig from './public-config.mjs';
+import { mountImporter } from './import-ui.mjs';
 
 const CONFIG_KEY = 'myspace.assets.public-config.v1';
 const options = Object.entries(ACCOUNT_KINDS).map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
@@ -13,7 +14,7 @@ function privateControls() {
 
 export function mountWorkspace(root, { config = defaultConfig, storage = globalThis.localStorage, win = globalThis.window, clientFactory = c => new AssetClient(c) } = {}) {
   let client = null, mode = 'demo', data = null, message = '', busy = false, revision = 0, active = !root.hidden;
-  let unsubscribe;
+  let unsubscribe, importer;
   try { const saved = storage?.getItem(CONFIG_KEY); if (saved) config = JSON.parse(saved); validateConfig(config); client = clientFactory(config); } catch { /* An unconfigured project defaults to a public sample. */ }
   function bindClient() { unsubscribe?.(); unsubscribe = client?.subscribe(state => {
     if (state === 'locked') { revision++; data = null; busy = false; }
@@ -21,6 +22,7 @@ export function mountWorkspace(root, { config = defaultConfig, storage = globalT
   }); }
   bindClient();
   function render() {
+    importer?.destroy(); importer = null;
     const authorized = client?.state === 'authorized';
     let auth = '';
     if (mode === 'private') {
@@ -35,6 +37,7 @@ export function mountWorkspace(root, { config = defaultConfig, storage = globalT
       <p id="asset-message" class="asset-message" role="status" aria-live="polite">${e(message || (busy ? '처리 중입니다…' : ''))}</p>
       <div id="asset-auth">${auth}</div><div id="asset-controls">${active && mode === 'private' && authorized ? privateControls() : ''}</div>
       <div id="asset-dashboard" aria-busy="${busy}">${active && mode === 'demo' ? dashboardHTML(sampleData()) : active && authorized && data ? dashboardHTML(data) : ''}</div>`;
+    if (active && mode === 'private' && authorized && data && !busy) importer = mountImporter(root.querySelector('#asset-import'), { client, accounts: data.accounts, onSaved: load, win });
   }
   async function load() {
     if (!active || mode !== 'private' || client?.state !== 'authorized') return;
@@ -85,7 +88,7 @@ export function mountWorkspace(root, { config = defaultConfig, storage = globalT
   };
   win.addEventListener('myspace:workspace', onWorkspace);
   render();
-  return { destroy() { unsubscribe?.(); client?.lock(); win.removeEventListener('myspace:workspace', onWorkspace); root.replaceChildren(); } };
+  return { destroy() { importer?.destroy(); unsubscribe?.(); client?.lock(); win.removeEventListener('myspace:workspace', onWorkspace); root.replaceChildren(); } };
 }
 
 if (typeof document !== 'undefined') {

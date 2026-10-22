@@ -1,0 +1,22 @@
+name: Checks
+on:
+  push:
+    branches: [main, feat/asset-management]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: git diff --exit-code -- assets/xlsx-worker.mjs
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run build:site

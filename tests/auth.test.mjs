@@ -12,6 +12,13 @@ test('locked, denied and expired clients never request financial tables', async 
   await assert.rejects(client.loadData(), /먼저 본인/);
   assert.equal(calls.length, 3); assert.equal(client.session, null);
   assert.ok(calls.every(path => path.includes('/auth/') || path.endsWith('/asset_access_allowed')));
+  client.state = 'authorized'; client.session = { accessToken: 'expired', expiresAt: Date.now() - 1 };
+  await assert.rejects(client.loadData(), /먼저 본인/); assert.equal(calls.length, 3); assert.equal(client.session, null);
+});
+test('a rejected expired server token locks the session without exposing response text', async () => {
+  const client = new AssetClient(config, async () => response({ code: 'expired', details: 'PRIVATE-SERVER-DETAILS' }, 401));
+  client.state = 'authorized'; client.session = { accessToken: 'invalid-token', expiresAt: Date.now() + 10000 };
+  await assert.rejects(client.request('asset_accounts?select=id'), /로그인이 만료/); assert.equal(client.session, null); assert.equal(client.state, 'locked');
 });
 test('verified login gates data, discards refresh token, and logout locks before network completes', async () => {
   const calls = []; const client = new AssetClient(config, async (path, options) => { calls.push({ path, options }); return auth(path); });

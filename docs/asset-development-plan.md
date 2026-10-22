@@ -19,3 +19,11 @@
 ## 2단계 검증
 
 인증 전/다른 사용자/익명 금융 조회 차단, 로그아웃 중 지연 응답 무효화, 비밀 키 거부 및 DOM 로그인 경계 테스트 추가. PGlite의 PostgreSQL 엔진에서 실제 마이그레이션/RLS 정책을 실행했다. `npm test`: 19개 통과. 실제 Supabase 프로젝트/계정이 없어 호스팅 DB·실제 Auth 검증은 미실행. EGO-LITE 검증도 연결 대기. 사용자 외부 설정 절차는 `docs/supabase-setup.md` 참조.
+
+## 3단계 검증과 인계
+
+`npm ci --cache /workspace/.cache/myspace-npm`, `npm run build:site`, `npm test`: 35개 통과, 실패/스킵 0. 합성 CSV/EUC-KR/XLSX, 수동 매핑/원화 단위/고객정보 열 차단, 미리보기/확인 경계, 실제 Worker 번들 프로토콜, 서버 중복 차단/새 기준일 교체/이전 기준일 거부/잔액 제약 실패 시 전체 롤백을 확인했다. `npm audit --omit=dev --audit-level=high`: 취약점 0. Worker 재빌드는 바이트 단위 일치. 개발 서버와 정적 배포 아티팩트의 HTML/JS/CSS 경로를 HTTP로 확인했다. 기존 온보딩 서버는 중단·재개 사이 응답이 끊겨 본 작업에서 시작했던 프로세스만 재시작했고 HTTP 검증을 통과했다.
+
+실제 금융정보와 실제 증권사 파일은 사용하지 않았다. 단계별 커밋은 `feat/asset-management` 브랜치에 올리며 main/운영 사이트 반영은 아직 하지 않았다. EGO-LITE 연결이 없으므로 실제 브라우저·모바일 화면 검증은 미실행. Supabase 프로젝트가 없어 실제 Auth/호스팅 DB 통합 검증은 미실행. GitHub API/Pages 읽기는 프록시 403으로 차단되어 실제 게시 상태를 확인하지 못했다. 1~3단계 코드 구현과 로컬 자동 검증을 마쳤으나 운영 준비/배포 완료를 주장하지 않는다.
+
+환경 설정 초안에는 npm 설치/시작 지침을 갱신하고 기존 외부 자산 도메인을 유지하며 api.github.com, hsh3167.github.io를 추가했다. 초안 저장은 런타임 적용·환경 게시·앱 배포가 아니다. 사용자가 환경 설정을 저장/게시한 뒤 해당 네트워크와 복원 상태를 다시 확인해야 한다. Supabase 생성/본인 UUID 등록/공개 연결 설정 및 게시 절차는 docs/supabase-setup.md, docs/import-and-deploy.md에 정리했다.

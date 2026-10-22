@@ -56,6 +56,10 @@
 .asset-form input,.asset-form select{height:42px;padding:8px 12px;min-width:0;width:100%;background:#101621;border:1px solid #3b4457;border-radius:8px;color:#e5e9f4}
 .asset-form>p{grid-column:1/-1;margin:0}.asset-form button{min-height:42px}.asset-form button:disabled{opacity:.5;cursor:wait}
 .asset-tools{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}.asset-tools>details{min-width:0;background:#171d29;border:1px solid #313c4f;border-radius:12px;padding:12px 18px;color:#bdc6da;font-size:12px}
+.asset-upload{margin-bottom:20px}.asset-upload>p,.asset-upload-form p,.asset-upload-preview>p{font-size:11px;color:#95a4bc;line-height:1.8}.asset-file-label{display:grid;gap:10px;font-size:12px;color:#c1cce0;margin:20px 0}.asset-file-label input{max-width:100%;font-size:12px;color:#8e9fb9}.asset-file-label input::file-selector-button{background:#2c3049;border:1px solid #575777;border-radius:8px;color:#d3cbff;padding:10px;margin-right:12px;cursor:pointer}
+.asset-mapping{grid-column:1/-1;min-width:0;border:1px solid #3a4459;border-radius:10px;padding:17px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.asset-mapping legend{color:#b1bdd4;font-size:12px;padding:0 8px}
+.asset-upload-preview{grid-column:1/-1;min-width:0}.asset-upload-preview h4{font-size:14px}.asset-validation{font-size:11px;color:#f0b4a9;line-height:1.8;padding-left:20px;max-height:180px;overflow:auto}.asset-confirm{grid-column:1/-1;display:flex!important;align-items:flex-start;gap:10px!important;line-height:1.8}.asset-confirm input{width:16px!important;height:16px!important;flex:0 0 16px;margin:3px 0}.asset-upload-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px}
+@media(max-width:650px){.asset-mapping{grid-template-columns:1fr}.asset-upload-actions button{width:100%}}
 @media(max-width:650px){.asset-tools,.asset-form{grid-template-columns:1fr}}
 @media(max-width:1250px){.asset-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.sidebar{flex-wrap:wrap}.side-nav[aria-label="작업 공간"]{flex-wrap:wrap}}
