@@ -40,7 +40,10 @@ export async function checkConnection(connection, { fetcher = globalThis.fetch, 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {
     const report = await checkConnection(config, { authOnly: process.argv.includes('--auth-only') });
-    for (const check of report.checks) console.log(`${check.passed ? 'PASS' : 'FAIL'} ${check.message}`);
+    for (const check of report.checks) {
+      console.log(`${check.passed ? 'PASS' : 'FAIL'} ${check.message}`);
+      if (process.env.GITHUB_ACTIONS === 'true') console.log(`::${check.passed ? 'notice' : 'error'}::${check.message}`);
+    }
     if (!report.signupDisabled) console.log('권장 설정: Authentication 설정에서 신규 사용자 가입을 비활성화하세요.');
     console.log('금융 레코드·비밀번호·로그인 토큰을 읽거나 저장하지 않았습니다. 본인 로그인 검증은 별도로 필요합니다.');
     if (!report.ready) process.exitCode = 1;
