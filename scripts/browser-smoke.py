@@ -284,6 +284,63 @@ async def main():
         await expect(page.locator("#asset-workspace")).to_be_visible()
         assert not page_errors, page_errors
         passed("asset deep link/reload returns to sample mode; no uncaught JavaScript errors")
+
+        recovery_context = await browser.new_context(viewport={"width": 390, "height": 844})
+        recovery_page = await recovery_context.new_page()
+        recovery_page.on("pageerror", lambda error: page_errors.append(str(error)))
+        recovery_calls = []
+        async def recovery_config(route):
+            await route.fulfill(content_type="text/javascript", body="export default " + json.dumps({"url": PROJECT, "publishableKey": PUBLIC_KEY}) + ";")
+        async def recovery_backend(route):
+            request = route.request
+            headers = {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "GET,POST,PUT,OPTIONS", "Content-Type": "application/json"}
+            if request.method == "OPTIONS":
+                await route.fulfill(status=204, headers=headers)
+                return
+            path = request.url.removeprefix(PROJECT)
+            recovery_calls.append((path, request.method, request.post_data_json if request.post_data else None))
+            assert not any(table in path for table in ["asset_accounts", "asset_holdings", "asset_payments", "asset_snapshots", "asset_imports"])
+            if path == "/auth/v1/user":
+                result = {"id": "synthetic-owner"}
+            elif path == "/rest/v1/rpc/asset_access_allowed":
+                result = True
+            elif path.startswith("/auth/v1/recover?") or path == "/auth/v1/logout":
+                result = {}
+            else:
+                raise AssertionError("Unexpected password setup request")
+            await route.fulfill(headers=headers, body=json.dumps(result))
+        await recovery_page.route("**/assets/public-config.mjs", recovery_config)
+        await recovery_page.route(PROJECT + "/**", recovery_backend)
+        recovery_url = BASE + "/assets/password.html"
+        await recovery_page.goto(recovery_url, wait_until="domcontentloaded")
+        await expect(recovery_page.locator('[name="email"]')).to_be_visible()
+        assert not recovery_calls
+        await recovery_page.locator('[name="email"]').fill("synthetic@example.test")
+        await recovery_page.locator('button[type="submit"]').click()
+        await expect(recovery_page.locator("#password-setup")).to_contain_text("등록된 이메일이면")
+        assert len(recovery_calls) == 1 and "redirect_to=" in recovery_calls[0][0]
+        await recovery_page.goto(recovery_url + "#error=access_denied&error_code=otp_expired", wait_until="domcontentloaded")
+        await expect(recovery_page.locator("#password-setup")).to_contain_text("유효하지 않거나 만료")
+        assert recovery_page.url == recovery_url and len(recovery_calls) == 1
+        await recovery_page.goto(recovery_url + "#access_token=synthetic-recovery&refresh_token=synthetic-do-not-store&type=recovery&expires_in=900", wait_until="domcontentloaded")
+        await expect(recovery_page.locator('[name="password"]')).to_be_visible()
+        assert recovery_page.url == recovery_url
+        await recovery_page.locator('[name="password"]').fill("synthetic-new-password")
+        await recovery_page.locator('[name="confirmation"]').fill("synthetic-wrong-password")
+        await recovery_page.locator('button[type="submit"]').click()
+        await expect(recovery_page.locator("#password-setup")).to_contain_text("일치하지")
+        assert not any(call[1] == "PUT" for call in recovery_calls)
+        await recovery_page.locator('[name="password"]').fill("synthetic-new-password")
+        await recovery_page.locator('[name="confirmation"]').fill("synthetic-new-password")
+        await recovery_page.locator('button[type="submit"]').click()
+        await expect(recovery_page.locator("#password-setup")).to_contain_text("비밀번호를 저장했습니다")
+        assert [call[2] for call in recovery_calls if call[1] == "PUT"] == [{"password": "synthetic-new-password"}]
+        assert await recovery_page.evaluate("localStorage.length + sessionStorage.length") == 0
+        assert await recovery_page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+        await recovery_page.screenshot(path=str(screenshots / "password-setup-mobile.png"), full_page=True)
+        assert not page_errors, page_errors
+        passed("password setup email, expired link, owner verification, mismatch and save; URL/storage privacy and mobile layout")
+        await recovery_context.close()
         await context.close()
         await browser.close()
     print(f"{len(checks)} browser scenario groups passed. Synthetic/mock Supabase only.", flush=True)

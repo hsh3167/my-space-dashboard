@@ -50,6 +50,7 @@
 .asset-mode-actions,.asset-session{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px}
 .asset-session{font-size:11px;color:#a1b0c6;border:1px solid #354453;border-radius:11px;padding:14px}.asset-session>span{flex:1;min-width:180px}
 .asset-message{font-size:12px;color:#e5c39b;line-height:1.8;overflow-wrap:anywhere}.asset-message:empty{display:none}
+.asset-login a{color:#b5a6ff;text-decoration:underline;text-underline-offset:3px}
 .asset-login{margin-bottom:20px}.asset-login h3{font-size:17px}.asset-login p,.asset-form p{font-size:11px;color:#95a4bc;line-height:1.8}.asset-login details{margin-top:20px;font-size:12px;color:#bbc5d9}.asset-login summary,.asset-tools summary{cursor:pointer;padding:8px 0}
 .asset-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:end;margin:16px 0}
 .asset-form label{font-size:11px;color:#aebbd1;display:grid;gap:8px;min-width:0}
