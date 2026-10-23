@@ -6,7 +6,8 @@
     "test": "node --test tests/*.test.mjs",
     "serve": "python3 -m http.server 8000 --bind 127.0.0.1",
     "build": "node scripts/build.mjs",
-    "build:site": "npm run build && node scripts/prepare-site.mjs"
+    "build:site": "npm run build && node scripts/prepare-site.mjs",
+    "prepare:supabase": "node scripts/prepare-supabase-setup.mjs"
   },
   "engines": {
     "node": ">=22"

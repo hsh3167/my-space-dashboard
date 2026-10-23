@@ -26,21 +26,25 @@ export class AssetClient {
     this.epoch++; this.pending.abort(); this.pending = new AbortController();
     clearTimeout(this.timer); this.session = null; this.state = 'locked'; this.emit();
   }
-  async fetchJSON(path, { token, method = 'GET', body, signal = this.pending.signal } = {}) {
+  async fetchJSON(path, { token, method = 'GET', body, signal = this.pending.signal, withCount = false } = {}) {
     const response = await this.fetcher(this.config.url + path, {
       method, signal, cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer',
-      headers: { apikey: this.config.publishableKey, ...(token ? { Authorization: `Bearer ${token}` } : {}), 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      headers: { apikey: this.config.publishableKey, ...(token ? { Authorization: `Bearer ${token}` } : {}), 'Content-Type': 'application/json', Prefer: withCount ? 'return=representation,count=exact' : 'return=representation' },
       ...(body === undefined ? {} : { body: JSON.stringify(body) })
     });
     if (!response.ok) {
       let code; try { code = (await response.json()).code; } catch { /* Never log raw server responses. */ }
       if (response.status === 401) { if (!token || token === this.session?.accessToken) this.lock(); throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.'); }
       if (code === '23505') throw new Error('이미 등록된 데이터입니다. 중복 업로드 또는 계좌 별칭을 확인하세요.');
+      if (code === 'PGRST202') throw new Error('자산관리 DB 초기 설정이 필요합니다. Supabase SQL 설정을 먼저 완료해 주세요.');
       if (code === '22023' || code === '23514') throw new Error('입력 데이터 또는 기준일을 확인하세요. 이전 기준일로 현재 잔액을 덮어쓸 수 없습니다.');
       if (response.status === 403) throw new Error('접근 권한이 없습니다. 본인 계정 등록과 RLS 설정을 확인하세요.');
       throw new Error('요청을 완료하지 못했습니다. 연결과 입력 내용을 확인해 주세요.');
     }
-    return response.status === 204 ? null : response.json();
+    const value = response.status === 204 ? null : await response.json();
+    if (!withCount) return value;
+    const count = /\/(\d+)$/.exec(response.headers.get('content-range') || '');
+    return { rows: value, total: count ? Number(count[1]) : null };
   }
   async login(email, password) {
     this.lock(); const epoch = this.epoch; this.state = 'authenticating'; this.emit();
@@ -74,13 +78,24 @@ export class AssetClient {
   }
   async loadData() {
     const paths = [
-      'asset_accounts?select=id,label,kind,balance,debt,valuation_date&order=created_at.asc',
-      'asset_holdings?select=id,account_id,name,symbol,quantity,market_value,cost_basis&order=name.asc',
+      'asset_accounts?select=id,label,kind,balance,debt,valuation_date&order=created_at.asc,id.asc',
+      'asset_holdings?select=id,account_id,name,symbol,quantity,market_value,cost_basis&order=name.asc,id.asc',
       'asset_snapshots?select=snapshot_date,total_assets,total_liabilities&order=snapshot_date.desc&limit=366',
-      'asset_payments?select=id,label,due_date,amount,status&order=due_date.asc'
+      'asset_payments?select=id,label,due_date,amount,status&order=due_date.asc,id.asc'
     ];
-    const results = await Promise.all(paths.map(path => this.request(path)));
+    const results = await Promise.all(paths.map((path, i) => i === 2 ? this.request(path) : this.readAll(path)));
     const data = empty(); Object.keys(data).forEach((key, i) => { data[key] = results[i]; }); return data;
+  }
+  async readAll(path) {
+    const epoch = this.epoch, rows = [], batchSize = 1000;
+    while (true) {
+      if (epoch !== this.epoch) throw new Error('요청이 취소되었습니다.');
+      const page = await this.request(`${path}&offset=${rows.length}&limit=${batchSize}`, { withCount: true });
+      if (!Array.isArray(page.rows)) throw new Error('계좌 데이터 응답 형식을 확인하세요.');
+      rows.push(...page.rows);
+      if (page.rows.length === 0 || (page.total !== null ? rows.length >= page.total : page.rows.length < batchSize)) return rows;
+      if (rows.length >= 100000) throw new Error('한 번에 표시할 수 있는 자산 데이터 범위를 초과했습니다.');
+    }
   }
   saveAccount(account) { return this.request('rpc/save_asset_account', { method: 'POST', body: { p_label: account.label, p_kind: account.kind, p_balance: account.balance, p_debt: account.debt } }); }
   savePayment(payment) { return this.request('asset_payments', { method: 'POST', body: payment }); }

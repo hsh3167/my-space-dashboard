@@ -1,6 +1,12 @@
 name: Verify deployed My Space
 on:
   workflow_dispatch:
+    inputs:
+      supabase_check:
+        description: Supabase connection check (synthetic browser tests always run)
+        type: choice
+        options: [none, auth, schema]
+        default: none
 permissions:
   contents: read
 jobs:
@@ -13,6 +19,16 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - name: Check configured Supabase without reading financial records
+        if: inputs.supabase_check != 'none'
+        env:
+          SUPABASE_CHECK_MODE: ${{ inputs.supabase_check }}
+        run: |
+          if [ "$SUPABASE_CHECK_MODE" = "auth" ]; then
+            node scripts/check-supabase-connection.mjs --auth-only
+          else
+            node scripts/check-supabase-connection.mjs
+          fi
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

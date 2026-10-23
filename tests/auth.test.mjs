@@ -48,3 +48,21 @@ test('invalid connection, service-role keys and secret keys are rejected', () =>
   const jwt = 'header.' + btoa(JSON.stringify({ role: 'service_role' })) + '.signature';
   for (const publishableKey of [jwt, 'sb_secret_do_not_use_this_key']) assert.throws(() => validateConfig({ ...config, publishableKey }));
 });
+test('missing hosted schema gives an actionable setup message before any financial table read', async () => {
+  const calls = [];
+  const client = new AssetClient(config, async path => { calls.push(path); return path.endsWith('/asset_access_allowed') ? response({ code: 'PGRST202' }, 404) : auth(path); });
+  await assert.rejects(client.login('synthetic@example.test', 'synthetic-password'), /DB 초기 설정/);
+  assert.equal(client.state, 'locked'); assert.equal(calls.length, 3);
+});
+test('all holdings are loaded across the Supabase row cap, including custom limits below the requested page size', async () => {
+  const holdings = Array.from({ length: 1001 }, (_, i) => ({ id: `synthetic-${i}`, market_value: 10 })); const offsets = [];
+  const client = new AssetClient(config, async (path, options) => {
+    if (!path.includes('asset_holdings?')) return path.includes('/auth/') || path.endsWith('/asset_access_allowed') ? auth(path) : response([]);
+    assert.match(options.headers.Prefer, /count=exact/);
+    const offset = Number(new URL(path).searchParams.get('offset')); offsets.push(offset);
+    const rows = holdings.slice(offset, offset + 400);
+    return new Response(JSON.stringify(rows), { headers: { 'Content-Range': `${offset}-${offset + rows.length - 1}/${holdings.length}` } });
+  });
+  await client.login('synthetic@example.test', 'synthetic-password');
+  assert.equal((await client.loadData()).holdings.length, 1001); assert.deepEqual(offsets, [0,400,800]); client.lock();
+});
