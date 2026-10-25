@@ -135,8 +135,26 @@ async def main():
         await page.locator("#clear-search").click()
         await page.locator('[data-tab="work"]').click()
         await expect(page.locator("#link-counter")).to_have_text("6 LINKS")
-        await page.locator('[data-tab="office"]').click()
-        await expect(page.locator("#grid-heading")).to_have_text("AI 사무실")
+        await page.locator('[data-tab="projects"]').click()
+        await expect(page.locator("#grid-heading")).to_have_text("개인 프로젝트")
+        await expect(page.locator(".lab-card")).to_have_count(6)
+        await expect(page.locator('.lab-card a[href="https://hsh3167.github.io/my-space-dashboard/"]')).to_have_count(1)
+        await page.locator('.lab-card').filter(has_text="리프팅 모듈").locator('[data-project-action="detail"]').click()
+        await expect(page.locator("#lab-detail")).to_contain_text("리프팅 모듈")
+        await page.locator('#lab-detail [data-project-action="close-detail"]').click()
+        await page.locator('#dashboard-grid [data-project-action="add"]').click()
+        await page.locator('#lab-form [name="name"]').fill("브라우저 합성 프로젝트")
+        await page.locator('#lab-form [name="category"]').select_option("simulation")
+        await page.locator('#lab-form .lab-label').fill("테스트 시뮬레이션")
+        await page.locator('#lab-form .lab-url').fill("https://example.test/sim")
+        await page.locator('#lab-form [type="submit"]').click()
+        await expect(page.locator(".lab-card")).to_have_count(7)
+        await page.locator('#lab-detail [data-project-action="close-detail"]').click()
+        await expect(page.locator('.lab-card a[href="https://example.test/sim"]')).to_have_count(1)
+        await page.reload(wait_until="domcontentloaded")
+        await page.locator('[data-tab="projects"]').click()
+        await expect(page.locator('.lab-card a[href="https://example.test/sim"]')).to_have_count(1)
+        passed("project cards, detail, simulation launch link and local persistence")
         passed("existing navigation and search")
 
         await page.locator('[data-tab="personal"]').click()
@@ -178,7 +196,7 @@ async def main():
         await page.screenshot(path=str(screenshots / "assets-desktop.png"), full_page=True)
         for width in [360, 390, 768, 1440]:
             await page.set_viewport_size({"width": width, "height": 844})
-            for tab in ["personal", "work", "office", "assets"]:
+            for tab in ["personal", "work", "projects", "assets"]:
                 await page.locator(f'[data-tab="{tab}"]').click()
                 assert await page.evaluate("document.documentElement.scrollWidth <= innerWidth"), f"Overflow: {width}px {tab}"
             if width == 390:
