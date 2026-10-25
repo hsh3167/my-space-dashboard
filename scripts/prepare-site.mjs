@@ -5,7 +5,7 @@ import defaultConfig from '../assets/public-config.mjs';
 import { validateConfig } from '../assets/client.mjs';
 
 // An explicit allowlist prevents tests, SQL, dependencies or local financial files from entering the Pages artifact.
-export const SITE_FILES = ['index.html', 'app.js', 'styles.css', 'obsidian.css', 'favicon.svg', '.nojekyll', 'THIRD_PARTY_NOTICES.md',
+export const SITE_FILES = ['index.html', 'app.js', 'styles.css', 'obsidian.css', 'projects.css', 'projects.js', 'favicon.svg', '.nojekyll', 'THIRD_PARTY_NOTICES.md',
   'assets/assets.css', 'assets/workspace.mjs', 'assets/sample.mjs', 'assets/model.mjs', 'assets/dashboard.mjs',
   'assets/client.mjs', 'assets/import-core.mjs', 'assets/import-ui.mjs', 'assets/xlsx-worker.mjs',
   'assets/password.html', 'assets/password.css', 'assets/password.mjs'];
