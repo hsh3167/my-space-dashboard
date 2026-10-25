@@ -85,7 +85,8 @@ async def main():
         else:
             assert state["verified"], "Financial request before owner authorization"
             assert request.headers.get("authorization") == f"Bearer {TOKEN}"
-            state["financial"] += 1
+            if not path.startswith("/rest/v1/project_hub_projects"):
+                state["financial"] += 1
             if path.startswith("/rest/v1/project_hub_projects"):
                 ident = None
                 if "?id=eq." in path:
