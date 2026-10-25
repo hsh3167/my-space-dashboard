@@ -62,3 +62,14 @@
 @media(max-width:1100px){.lab-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:740px){.lab-intro{flex-direction:column;align-items:flex-start;padding:20px}.lab-grid{grid-template-columns:1fr}.lab-stats{gap:7px}.lab-stats span{flex:1;white-space:nowrap}.lab-dialog{padding:20px}.lab-link-row{grid-template-columns:1fr 1fr 35px}.lab-link-row .lab-url{grid-column:1/3;grid-row:2}.lab-link-row .lab-remove{grid-column:3;grid-row:1}}
 @media(prefers-reduced-motion:reduce){.lab-card{transition:none}.lab-card:hover{transform:none}}
+
+/* Owner-only Supabase sync controls */
+.lab-sync{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:17px 20px;border:1px solid #326081;border-radius:14px;background:linear-gradient(110deg,#142839,#132031)}
+.lab-sync strong{display:block;color:#91cffd;font-size:13px}
+.lab-sync p{color:#a8bdcf;line-height:1.65;font-size:11px;margin:6px 0 0}
+.lab-sync-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+#lab-login-form>label{display:grid;gap:8px;color:#c1d3e5;font-size:12px;font-weight:650;margin:19px 0}
+#lab-login-form input{display:block;width:100%;min-width:0;border:1px solid #3c556d;border-radius:9px;padding:11px 12px;background:#0d1520;color:#eff7ff;font-size:13px}
+#lab-login-form input:focus{border-color:#6ab9f7;box-shadow:0 0 0 3px #3b9fea22}
+.lab-add:disabled{opacity:.65;cursor:wait}
+@media(max-width:740px){.lab-sync{flex-direction:column;align-items:flex-start}.lab-sync-actions{width:100%;flex-wrap:wrap}}
