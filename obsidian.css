@@ -11,8 +11,8 @@
   --text:#f5f6f6;
   --muted:#a0a5a9;
   --subtle:#7c858b;
-  --accent:#edf0f1;
-  --accent2:#b8c0c3;
+  --accent:#58a6ff;
+  --accent2:#7dd3fc;
 }
 html{background:#08090a}
 body{
@@ -170,17 +170,7 @@ h1 em{background:linear-gradient(90deg,#fff,#bcc3c7);background-clip:text;-webki
 .work-empty{color:#a8b0b3}
 .work-empty button{background:#23272a;border-color:#535b5e;color:#eff1f1}
 .work-empty button:hover{background:#353b3e;border-color:#c7cfd1}
-/* The business banner injects its own stylesheet at runtime. Higher specificity wins. */
-body .bear-banner{
-  background:radial-gradient(ellipse at 85% 90%,#353e3e55,transparent 65%),linear-gradient(118deg,#1b1f21,#0e1012 68%,#1d2224);
-  border-color:#41484a;box-shadow:inset 0 1px 0 #ffffff10;
-}
-body .bear-kicker,body .bear-intro h2 span{color:#b5c5c7}
-body .bear-intro p{color:#bbc4c7}
-body .bear-model{color:#e2e7e8}
-body .bear-model:hover{color:#fff}
-body .bear-model-image{background:#e5e9e8}
-body .bear-model:focus-visible,body .bear-logo-link:focus-visible{outline-color:#e0e6e8}
+/* Bear Robotics banner remains at its original brand colors (app.js). */
 /* Asset dashboard and private data editor */
 .asset-eyebrow{color:#adb8bb}
 .asset-mode-badge{border-color:#555e62;color:#d8dddf;background:#282c2f}
@@ -227,3 +217,78 @@ body .bear-model:focus-visible,body .bear-logo-link:focus-visible{outline-color:
   .section-card{transition:none!important}
   .section-card:hover{transform:none}
 }
+
+/* BLACK + BLUE design: inspired by GitHub's semantic accents and Linear's restraint.
+ * Exception: all Bear Robotics banner styling and photography are unchanged.
+ */
+body{background:radial-gradient(ellipse 68% 40% at 85% -10%,#122337 0%,#0b1016 48%,transparent 100%),#08090a}
+::selection{background:#235e93;color:#fff}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline-color:#6ebaff}
+.brand-mark{border-color:#385d79;background:linear-gradient(145deg,#1b456c,#0d1926);box-shadow:0 6px 24px #1681d632}
+.brand-orb{background:linear-gradient(135deg,#e4f5ff,#6dbbff 46%,#2867a7);box-shadow:0 0 0 4px #298bd329,0 0 20px #4da9ff76}
+.brand-type>span{color:#85c5ff}
+.brand-type small,.side-group-label{color:#809daf}
+.nav-item .nav-icon{color:#88b0d2}
+.nav-item:hover{background:#172638;color:#e2f1ff}
+.nav-item:hover .nav-icon{color:#a4d5ff}
+.nav-item.active{background:linear-gradient(90deg,#1b3a56,#172738);border-color:#386486;box-shadow:inset 3px 0 0 #62b0ff,0 5px 23px #0b41652e;color:#f2f8ff}
+.nav-item.active .nav-icon,.nav-item.active .nav-shortcut{color:#91cfff}
+.sidebar-note{border-color:#32485a;background:radial-gradient(ellipse at 75% 0%,#1d3449,#161c23 68%)}
+.note-spark{color:#7bc0ff}
+.profile-avatar{background:linear-gradient(135deg,#2375b9,#173b5f)}
+.topbar{border-bottom-color:#263442}
+.breadcrumbs strong,.clock{color:#e0efff}
+.header-icon{color:#97bfdf;border-color:#334e66;background:#142334}
+.header-icon:hover{border-color:#6db8ff;background:#1b3b56;color:#e7f6ff}
+.hero{border-color:#315779;background:radial-gradient(circle at 79% 46%,#17456b 0%,#112b46 24%,#111a29 52%,#0f1216 85%);box-shadow:inset 0 1px 0 #bce0ff18,0 18px 50px #0007}
+.hero:before{background:linear-gradient(90deg,transparent 50%,#70bbff0a),repeating-linear-gradient(90deg,transparent 0 51px,#72b8f008 52px),repeating-linear-gradient(0deg,transparent 0 51px,#72b8f007 52px)}
+.eyebrow{color:#99c9ef}
+.eyebrow-rule{background:#5a96c4}
+h1 em{background:linear-gradient(90deg,#e6f5ff,#85c6ff 58%,#51a8f9);background-clip:text;-webkit-background-clip:text;color:transparent}
+.orb-ring{border-color:#75c2ff44}
+.orb-ring-1{box-shadow:0 0 60px #288cda36,inset 0 0 35px #126cac29}
+.orb-ring-2{border-color:#6cbaff3d}.orb-ring-3{border-color:#89caff1f}
+.orb-core{background:radial-gradient(circle at 33% 23%,#e8f7ff 0%,#91cfff 16%,#368ad1 40%,#164b7a 69%,#0e2033 100%);box-shadow:0 0 58px #378dd846,inset -21px -18px 39px #091a30,0 4px 13px #0009}
+.orb-core:after{border-color:#b1dcff3d}.orb-glimmer{box-shadow:0 0 15px 4px #b7e3ffaa}
+.search-wrap:focus-within{border-color:#72bafa;box-shadow:0 0 0 3px #429ded25}
+.search-icon{color:#81bcee}.search-hint{color:#8ebce2;border-color:#3e5264}
+.section-title-row h2{color:#f2f6f9}
+.link-counter{color:#8bc2ef;border-color:#32506a;background:#142435}
+.section-card:hover{border-color:#4d7194;box-shadow:inset 0 1px 0 #ffffff12,0 14px 32px #0005}
+.section-icon.purple,.section-icon.blue{background:#1a3451;color:#83c2ff;border-color:#2f5c82}
+.section-icon.teal{background:#15383f;color:#80d4d9;border-color:#2d5c66}
+.section-icon.rose{background:#322633;color:#e3b3c4;border-color:#65445d}
+.section-icon.amber{background:#372f20;color:#e7c48e;border-color:#625337}
+.section-icon.muted{background:#233241;color:#aac1d5;border-color:#415669}
+.section-add{color:#85c1f4}
+.section-add:hover{color:#d5ecff;background:#1b3852;border-color:#4f9ddc}
+.site-row:hover{background:#172636;border-color:#34516b}
+.site-row:hover .external,.site-edit:hover{color:#8ac5f5}
+.site-edit:hover{background:#213b54}
+.site-labels strong{color:#ecf3fa}
+.project-slot:hover{background:#172d42;border-color:#5d9dd5;color:#d4eaff}
+.project-icon{color:#8ebce2;border-color:#496989}
+.project-slot.filled{background:#192d40;border-color:#3d6083}
+.project-slot.filled .project-icon{background:#1e4768;border-color:#4279a9;color:#acd5ff}
+.work-tile:hover{border-color:#5495c8;background:#1c344a}
+.nudge .nudge-icon,.nudge button{color:#8ac6fa}
+.footer-heart{color:#68b7fa}
+.dialog-eyebrow{color:#88c4fa}
+.editor-dialog input:focus,.editor-dialog select:focus{border-color:#64b3ff}
+.primary-button{background:#2389e8;color:#fff;border-color:#3799f0}
+.primary-button:hover{background:#429ff0;border-color:#68b8fd}
+.ghost-button:hover{border-color:#4c86b6;background:#1b344a}
+.toast{border-color:#4072a0}
+.work-empty button:hover{border-color:#5aacf0;background:#1c3853;color:#e8f5ff}
+/* Asset pages share the palette; status colors retain their meaning. */
+.asset-eyebrow{color:#8ec3ea}
+.asset-mode-badge{border-color:#37648a;color:#a7d6fb;background:#17334b}
+.asset-stat-accent{background:linear-gradient(145deg,#1c4465,#172533);border-color:#3b79a8}
+.asset-chart-key span:first-child{color:#85c1fa}
+.asset-chart-key span:last-child{color:#62d0e4}
+.asset-color-0{background:#58a6ff}.asset-color-1{background:#69d2e6}
+.asset-color-2{background:#8b9cf4}.asset-color-3{background:#d6ad76}
+.asset-payment-status{border-color:#3b6587;color:#a6d7fc}
+.asset-login a{color:#85c5fb}
+.asset-file-label input::file-selector-button{color:#c8e7ff;border-color:#446b8a;background:#1a3349}
+.asset-file-label input::file-selector-button:hover{background:#254964}
