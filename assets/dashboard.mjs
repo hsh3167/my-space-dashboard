@@ -8,7 +8,7 @@ export function dashboardHTML(data) {
   return `<div class="asset-stats">
     ${card('총자산', s.total, `계좌 ${data.accounts.length}개 · 보유종목 포함`)}
     ${card('순자산', s.net, `부채 ${money(s.debt)} 차감`, 'asset-stat-accent')}
-    ${card('투자 평가금액', s.investment, `평가손익 ${s.gain >= 0 ? '+' : ''}${money(s.gain)}`)}
+    ${card('투자 평가금액', s.investment, `평가손익 ${s.gain == null ? '미확인 (매입원가 없음)' : (s.gain >= 0 ? '+' : '') + money(s.gain)}`)}
     ${card('다음 주택자금', next?.amount || 0, next ? `${e(next.due_date)} · ${e(next.label)}` : '예정된 납부가 없습니다')}
   </div>
   <div class="asset-panels">
