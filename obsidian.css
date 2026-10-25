@@ -1,0 +1,229 @@
+/* Obsidian / My Space — monochrome black design system.
+   Intentionally loaded after the existing workspace styles. */
+:root{
+  color-scheme:dark;
+  --bg:#08090a;
+  --sidebar:#0c0d0f;
+  --card:#131517;
+  --card2:#191b1e;
+  --stroke:#292d30;
+  --stroke2:#3b4146;
+  --text:#f5f6f6;
+  --muted:#a0a5a9;
+  --subtle:#7c858b;
+  --accent:#edf0f1;
+  --accent2:#b8c0c3;
+}
+html{background:#08090a}
+body{
+  background:radial-gradient(ellipse 78% 52% at 82% -15%,#232528 0%,#101113 46%,#08090a 100%);
+  color:var(--text);
+}
+::selection{background:#858c92;color:#08090a}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,
+summary:focus-visible{outline:2px solid #e6eaec;outline-offset:3px}
+.sidebar{
+  background:linear-gradient(165deg,#101113,#0a0b0c 72%);
+  border-right:1px solid #272a2d;
+  box-shadow:inset -1px 0 0 #ffffff04;
+}
+.brand-mark{border:1px solid #555c60;background:linear-gradient(145deg,#303439,#0c0e10);box-shadow:inset 0 1px 0 #ffffff18,0 6px 24px #0008}
+.brand-orb{background:linear-gradient(135deg,#ffffff,#a5adb1 48%,#4c555b);box-shadow:0 0 0 4px #9da5aa18,0 0 16px #c9d0d02b}
+.brand-type{color:#f7f7f7;letter-spacing:-1.3px}
+.brand-type>span{color:#adb4b7}
+.brand-type small,.side-group-label{color:#7f878b}
+.nav-item{color:#9fa5ab;border-radius:10px}
+.nav-item:hover{color:#f6f6f6;background:#202326}
+.nav-item.active{
+  background:linear-gradient(90deg,#2b2f32,#1c1f21);
+  border-color:#4c5155;
+  box-shadow:inset 3px 0 0 #e4e8e9,0 5px 22px #0003;
+  color:#fff;
+}
+.nav-shortcut{color:#959b9f}
+.nav-item.active .nav-shortcut{color:#d2d6d8}
+.sidebar-note{
+  border-color:#33383b;
+  background:radial-gradient(ellipse at 75% 0%,#292d30,#17191b 68%);
+}
+.note-spark{color:#f0f1f2}
+.sidebar-note p,.profile small{color:#929a9e}
+.profile{border-top-color:#272b2e}
+.profile-avatar{background:linear-gradient(135deg,#656e74,#30363a);color:#fff}
+.status-dot{background:#80c7aa;box-shadow:0 0 12px #80c7aa40}
+.topbar{
+  position:sticky;top:0;z-index:4;
+  background:#0d0f10ed;border-bottom:1px solid #292d30;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+}
+.breadcrumbs{color:#9aa1a5}
+.breadcrumbs .slash{color:#596165}
+.breadcrumbs strong,.clock{color:#e9ebec}
+.divider-v{background:#373b3d}
+.header-icon{background:#1a1c1f;color:#bac0c3;border-color:#363b3e}
+.header-icon:hover{background:#24282b;color:white;border-color:#8a9296}
+.content{padding-top:36px}
+.hero{
+  border:1px solid #373c3f;
+  border-radius:22px;
+  background:
+    radial-gradient(circle at 78% 50%,#35393b 0%,#202326 25%,#151719 55%,#111314 100%);
+  box-shadow:inset 0 1px 0 #ffffff13,0 18px 50px #0004;
+}
+.hero:before{
+  background:
+    linear-gradient(90deg,transparent 49%,#d5dadd05),
+    repeating-linear-gradient(90deg,transparent 0 51px,#ffffff06 52px),
+    repeating-linear-gradient(0deg,transparent 0 51px,#ffffff05 52px);
+  opacity:.55;
+}
+.eyebrow{color:#aeb4b7}
+.hero-status{background:#8bc5ac;box-shadow:0 0 12px #8bc5ac55}
+.eyebrow-rule{background:#8b969a}
+h1{letter-spacing:-1.8px}
+h1 em{background:linear-gradient(90deg,#fff,#bcc3c7);background-clip:text;-webkit-background-clip:text;color:transparent}
+.hero p{color:#aeb4b8}
+.orb-ring{border-color:#bfc5c739}
+.orb-ring-1{box-shadow:0 0 60px #c7d1d015,inset 0 0 34px #a7b1b113}
+.orb-ring-2{border-color:#aeb6b529}
+.orb-ring-3{border-color:#dfe4e316}
+.orb-core{
+  background:radial-gradient(circle at 32% 23%,#eef1f2 0%,#aeb6bb 16%,#545c62 46%,#22272b 72%,#111417 100%);
+  box-shadow:0 0 60px #d7e0e024,inset -20px -18px 40px #07090b,0 3px 14px #0009;
+}
+.orb-core:after{border-color:#d1d8da2a}
+.orb-glimmer{box-shadow:0 0 15px 4px #e0e6e599}
+.search-wrap{
+  background:#17191b;border-color:#3a4044;border-radius:13px;
+  box-shadow:0 2px 9px #0002;
+}
+.search-wrap:focus-within{border-color:#c0c7ca;box-shadow:0 0 0 3px #aeb8bb1c}
+.search-icon{color:#9ca5a8}
+.search-wrap input{color:#f4f5f6}
+.search-wrap input::placeholder{color:#8d969b}
+.search-hint{border-color:#404548;background:#25282b;color:#b2b8bb}
+.search-clear{color:#bcc3c6}
+.section-title-row h2{color:#f4f5f5}
+.section-title-row p{color:#9fa7ab}
+.link-counter{background:#181a1c;border-color:#353a3e;color:#b8c0c3}
+.section-card{
+  background:linear-gradient(150deg,#191b1e,#121416 75%);
+  border:1px solid #303538;border-radius:18px;
+  box-shadow:inset 0 1px 0 #ffffff0b,0 6px 22px #0002;
+  transition:border-color .2s ease,transform .2s ease,box-shadow .2s ease;
+}
+.section-card:hover{border-color:#626a6e;transform:translateY(-2px);box-shadow:inset 0 1px 0 #ffffff11,0 14px 30px #0005}
+.section-card.nudge{background:linear-gradient(135deg,#232629,#151719 72%);border-color:#454a4e}
+.section-icon.purple,.section-icon.blue,.section-icon.teal,.section-icon.rose,.section-icon.amber,.section-icon.muted{
+  background:#2a2e31;color:#dce1e3;border:1px solid #3e4447;
+}
+.section-icon.teal{color:#b8d4ca}
+.section-icon.amber{color:#dfd0af}
+.section-icon.rose{color:#d9bbc3}
+.card-title h3{color:#f0f1f2}
+.card-title p{color:#929ca1}
+.section-add{background:#24272a;border-color:#3a4044;color:#c2c9cb}
+.section-add:hover{color:#fff;border-color:#c1c8ca;background:#353a3e}
+.site-row:hover{background:#292c30;border-color:#41474b}
+.site-labels strong{color:#e6e9ea}
+.site-labels small{color:#939ca1}
+.external,.site-edit{color:#8a9398}
+.site-row:hover .external,.site-edit:hover{color:#ecf0f1}
+.site-edit:hover{background:#393e41}
+.site-logo{box-shadow:inset 0 0 0 1px #ffffff14}
+.project-slot{background:#1b1d20;border-color:#454b4e;color:#b0b7ba}
+.project-slot:hover{background:#292d30;border-color:#a9b0b4;color:#f0f1f2}
+.project-icon{border-color:#5a6064;color:#c2c9cc}
+.project-slot small{color:#929a9f}
+.project-slot.filled{background:#24282b;border-color:#52585c}
+.project-slot.filled .project-icon{background:#363b3e;border-color:#6c7478}
+.project-slot.filled strong{color:#f2f3f4}
+.work-tile{background:#202326;border-color:#373c40}
+.work-tile:hover{background:#303437;border-color:#90999e}
+.work-tile small{color:#a3aaad}
+.nudge .nudge-icon{color:#e2e7e8}
+.nudge p{color:#aab1b5}
+.nudge button{color:#e6ebed;text-decoration:underline;text-underline-offset:4px}
+.empty-search{border-color:#454a4d}
+.empty-search h3{color:#f3f4f4}
+.footer{color:#8a9296}
+.footer-heart{color:#d6dcde}
+.editor-dialog{
+  background:#17191b;border-color:#454a4e;color:#f5f6f6;
+  box-shadow:0 30px 100px #000d;
+}
+.editor-dialog::backdrop{background:#020304d9}
+.dialog-eyebrow{color:#b6c1c4}
+.icon-close{background:#272b2e;border-color:#444a4d;color:#d0d5d7}
+.editor-dialog label{color:#c7cdcf}
+.editor-dialog input,.editor-dialog select{background:#0e1011;color:#f4f5f5;border-color:#464c50}
+.editor-dialog input:focus,.editor-dialog select:focus{border-color:#ccd3d5}
+.helper-text,.settings-copy,.setting-item small{color:#a0a8ac}
+.setting-item{border-top-color:#363b3e}
+.primary-button{color:#111315;background:#e3e7e9;border-color:#e3e7e9}
+.primary-button:hover{background:#fff;border-color:#fff}
+.ghost-button{background:#292d30;border-color:#4c5357;color:#e6eaeb}
+.ghost-button:hover{border-color:#aeb7ba;background:#34393c}
+.danger-button{background:#46292b;border-color:#724144;color:#ffc0c2}
+.danger-outline-button{color:#ffb4b6;border-color:#855055}
+.toast{background:#222629;border-color:#60696d;color:#f5f7f7}
+.work-empty{color:#a8b0b3}
+.work-empty button{background:#23272a;border-color:#535b5e;color:#eff1f1}
+.work-empty button:hover{background:#353b3e;border-color:#c7cfd1}
+/* The business banner injects its own stylesheet at runtime. Higher specificity wins. */
+body .bear-banner{
+  background:radial-gradient(ellipse at 85% 90%,#353e3e55,transparent 65%),linear-gradient(118deg,#1b1f21,#0e1012 68%,#1d2224);
+  border-color:#41484a;box-shadow:inset 0 1px 0 #ffffff10;
+}
+body .bear-kicker,body .bear-intro h2 span{color:#b5c5c7}
+body .bear-intro p{color:#bbc4c7}
+body .bear-model{color:#e2e7e8}
+body .bear-model:hover{color:#fff}
+body .bear-model-image{background:#e5e9e8}
+body .bear-model:focus-visible,body .bear-logo-link:focus-visible{outline-color:#e0e6e8}
+/* Asset dashboard and private data editor */
+.asset-eyebrow{color:#adb8bb}
+.asset-mode-badge{border-color:#555e62;color:#d8dddf;background:#282c2f}
+.asset-notice{background:#1d2224;border-color:#40474b;color:#b7c1c5}
+.asset-stat,.asset-panel{background:linear-gradient(155deg,#191c1e,#121416);border-color:#32383b;box-shadow:inset 0 1px 0 #ffffff09}
+.asset-stat-accent{background:linear-gradient(145deg,#34393c,#1a1d1f);border-color:#626b70}
+.asset-stat p,.asset-stat small{color:#aab3b7}
+.asset-panel-heading>span,.asset-account small,.asset-chart-labels,.asset-chart-key,.asset-details{color:#a2adb2}
+.asset-meter{background:#30363a}
+.asset-color-0{background:#d9dfe1}
+.asset-color-1{background:#8ba9a9}
+.asset-color-2{background:#a1a9ba}
+.asset-color-3{background:#bfae97}
+.asset-chart-key span:first-child{color:#e1e6e8}
+.asset-chart-key span:last-child{color:#8ba9a9}
+#asset-workspace th{color:#a6b0b4;border-bottom-color:#3b4246}
+#asset-workspace td{border-bottom-color:#30363a}
+#asset-workspace td small{color:#9da7ac}
+.asset-payment{background:#1b1f21;border-color:#3d4447}
+.asset-payment-status{border-color:#666f73;color:#d2d9dc}
+.asset-payment-status.is-paid{color:#9bd1b7;border-color:#436352}
+.asset-payment-status.is-overdue{color:#f0b3a1;border-color:#855348}
+.asset-payment p,.asset-empty{color:#a5b0b6}
+.asset-session{border-color:#454e52;color:#bbc5c8}
+.asset-login a{color:#e5eaec}
+.asset-login p,.asset-form p{color:#aab4ba}
+.asset-form label{color:#c2cbcd}
+.asset-form input,.asset-form select{background:#0d0f11;border-color:#454d51;color:#eef1f2}
+.asset-tools>details{background:#1a1d20;border-color:#40494d;color:#cbd3d6}
+.asset-file-label input::file-selector-button{background:#303539;color:#e6eaeb;border-color:#5e676b}
+.asset-mapping{border-color:#475055}
+@media(max-width:900px){
+  .topbar{top:0}
+  .sidebar{background:#0c0e0f;border-bottom-color:#313538}
+}
+@media(max-width:650px){
+  .hero{border-radius:17px}
+  .section-card{border-radius:15px}
+  .content{padding-top:19px}
+  .hero-art{opacity:.4}
+  .asset-stat,.asset-panel{border-radius:14px}
+}
+@media(prefers-reduced-motion:reduce){
+  .section-card{transition:none!important}
+  .section-card:hover{transform:none}
+}
