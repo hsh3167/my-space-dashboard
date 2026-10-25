@@ -22,7 +22,7 @@
   const clean = raw => {
     if (!raw || typeof raw !== "object" || typeof raw.name !== "string") return null;
     return {
-      id: typeof raw.id === "string" ? raw.id.slice(0,90) : "p-"+Date.now(),
+      id: typeof raw.id === "string" ? raw.id.replace(/[^A-Za-z0-9_-]/g,"-").slice(0,90) : "p-"+Date.now(),
       name: raw.name.trim().slice(0,80),
       category: Object.hasOwn(CATEGORY_NAMES,raw.category) ? raw.category : "other",
       summary: String(raw.summary || "").slice(0,400),
@@ -100,9 +100,14 @@
       if (!existing) {
         // Do not resurrect defaults deleted on another device.
         if (!seed || (legacyPresent && !same(p,seed))) tasks.push({type:"create",p});
-      } else if (legacyPresent && seed && !same(p,seed) && same(existing,seed)) {
-        // Preserve customized local starter projects if the cloud is still pristine.
-        tasks.push({type:"update",p});
+      } else if (legacyPresent && !same(p,existing) && (!seed || !same(p,seed))) {
+        // Never discard conflicting personal notes/URLs. Keep a separately labeled copy
+        // when both local and remote versions were independently edited.
+        if (seed && same(existing,seed)) tasks.push({type:"update",p});
+        else tasks.push({type:"create",p:{...p,
+          id:(p.id.slice(0,62)+"-local-"+Date.now().toString(36)).slice(0,90),
+          name:(p.name+" (기존 PC)").slice(0,80)
+        }});
       }
     }
     for (const job of tasks) {
