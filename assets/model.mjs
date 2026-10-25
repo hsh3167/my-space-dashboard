@@ -6,8 +6,9 @@ export function summary(data) {
   const total = data.accounts.reduce((sum, a) => sum + Number(a.balance), 0);
   const debt = data.accounts.reduce((sum, a) => sum + Number(a.debt || 0), 0);
   const investment = data.holdings.reduce((sum, h) => sum + Number(h.market_value), 0);
-  const cost = data.holdings.reduce((sum, h) => sum + Number(h.cost_basis), 0);
-  return { total, debt, net: total - debt, investment, gain: investment - cost };
+  const costKnown = data.holdings.every(h => h.cost_basis != null);
+  const cost = costKnown ? data.holdings.reduce((sum, h) => sum + Number(h.cost_basis), 0) : null;
+  return { total, debt, net: total - debt, investment, gain: costKnown ? investment - cost : null };
 }
 export function monthlySnapshots(rows) {
   const months = new Map();
