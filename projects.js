@@ -69,7 +69,12 @@
     if (!cloudPromise) cloudPromise = Promise.all([
       import("./assets/project-cloud.mjs"), import("./assets/public-config.mjs")
     ]).then(([module,config]) => {
-      cloud = new module.ProjectCloud(config.default);
+      let connection = config.default;
+      try {
+        const saved = localStorage.getItem("myspace.assets.public-config.v1");
+        if (saved) connection = JSON.parse(saved);
+      } catch { /* Invalid saved config will be rejected by the shared validator. */ }
+      cloud = new module.ProjectCloud(connection);
       cloud.subscribe(state => {
         if (state === "locked") {
           ready = false; items = defaults();
