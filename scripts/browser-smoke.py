@@ -173,6 +173,8 @@ async def main():
         await page.locator('#lab-detail [data-project-action="close-detail"]').first.click()
         await page.locator('#dashboard-grid [data-project-action="add"]').click()
         await expect(page.locator("#lab-auth")).to_be_visible()
+        # Route the project session to the synthetic backend (same saved public config as assets).
+        await page.evaluate("(cfg) => localStorage.setItem('myspace.assets.public-config.v1', JSON.stringify(cfg))", {"url": PROJECT, "publishableKey": PUBLIC_KEY})
         state["allowed"] = True
         await page.locator('#lab-login-form [name="email"]').fill("synthetic@example.test")
         await page.locator('#lab-login-form [name="password"]').fill("synthetic-password")
