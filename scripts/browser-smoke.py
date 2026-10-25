@@ -42,6 +42,17 @@ async def main():
         "node", "--input-type=module", "-e",
         "import {workbook} from './tests/xlsx-fixture.mjs'; process.stdout.write(workbook([['퇴직연금 합성 보유현황'],['종목명','수량','평가금액','매입금액'],['브라우저 합성 연금 ETF',2,24000,20000]]));"
     ], cwd=ROOT)
+    projects = [
+        {"id": ident, "name": name, "category": category, "summary": "", "notes": "", "links": links}
+        for ident,name,category,links in [
+            ("f1","F1 Dashboard","web",[{"type":"github","label":"GitHub 저장소","url":"https://github.com/hsh3167/f1-dashboard"}]),
+            ("lifting","리프팅 모듈","mechanical",[{"type":"github","label":"GitHub 저장소","url":"https://github.com/hsh3167/lifting-module-new-carti-"}]),
+            ("cruze","Cruze Mechanical Lab","mechanical",[{"type":"github","label":"GitHub 저장소","url":"https://github.com/hsh3167/cruze-mechanical-lab"}]),
+            ("myspace","My Space 대시보드","web",[{"type":"web","label":"배포된 웹페이지","url":"https://hsh3167.github.io/my-space-dashboard/"}]),
+            ("robot-arm","로봇 암 설계","robotics",[]),
+            ("amr-sim","AMR 동역학 시뮬레이션","simulation",[])
+        ]
+    ]
     state = {"allowed": False, "verified": False, "financial": 0, "imports": [], "fingerprints": set(), "delay": False}
     release = asyncio.Event()
     page_errors = []
@@ -75,7 +86,25 @@ async def main():
             assert state["verified"], "Financial request before owner authorization"
             assert request.headers.get("authorization") == f"Bearer {TOKEN}"
             state["financial"] += 1
-            if path.startswith("/rest/v1/asset_") and request.method == "GET":
+            if path.startswith("/rest/v1/project_hub_projects"):
+                ident = None
+                if "?id=eq." in path:
+                    ident = path.split("?id=eq.")[1]
+                if request.method == "GET":
+                    result = copy.deepcopy(projects)
+                elif request.method == "POST":
+                    assert body.get("name") and body.get("links") is not None
+                    projects.append(copy.deepcopy(body))
+                    result = [body]
+                elif request.method == "PATCH":
+                    for record in projects:
+                        if record["id"] == ident:
+                            record.update(body)
+                    result = []
+                elif request.method == "DELETE":
+                    projects[:] = [record for record in projects if record["id"] != ident]
+                    result = []
+            elif path.startswith("/rest/v1/asset_") and request.method == "GET":
                 table = path.split("?", 1)[0].split("_")[-1]
                 result = copy.deepcopy(data[table])
                 if table == "accounts" and state["delay"]:
@@ -143,6 +172,13 @@ async def main():
         await expect(page.locator("#lab-detail")).to_contain_text("리프팅 모듈")
         await page.locator('#lab-detail [data-project-action="close-detail"]').first.click()
         await page.locator('#dashboard-grid [data-project-action="add"]').click()
+        await expect(page.locator("#lab-auth")).to_be_visible()
+        state["allowed"] = True
+        await page.locator('#lab-login-form [name="email"]').fill("synthetic@example.test")
+        await page.locator('#lab-login-form [name="password"]').fill("synthetic-password")
+        await page.locator('#lab-login-form [type="submit"]').click()
+        await expect(page.locator(".lab-sync strong")).to_contain_text("Supabase")
+        await page.locator('#dashboard-grid [data-project-action="add"]').click()
         await page.locator('#lab-form [name="name"]').fill("브라우저 합성 프로젝트")
         await page.locator('#lab-form [name="category"]').select_option("simulation")
         await page.locator('#lab-form .lab-label').fill("테스트 시뮬레이션")
@@ -151,10 +187,20 @@ async def main():
         await expect(page.locator(".lab-card")).to_have_count(7)
         await page.locator('#lab-detail [data-project-action="close-detail"]').first.click()
         await expect(page.locator('.lab-card a[href="https://example.test/sim"]')).to_have_count(1)
+        assert any(item["name"] == "브라우저 합성 프로젝트" for item in projects)
+        assert await page.evaluate("localStorage.getItem('myspace.project-lab.v1')") is None
         await page.reload(wait_until="domcontentloaded")
         await page.locator('[data-tab="projects"]').click()
+        await expect(page.locator('.lab-card a[href="https://example.test/sim"]')).to_have_count(0)
+        await page.locator('[data-project-action="login"]').click()
+        await page.locator('#lab-login-form [name="email"]').fill("synthetic@example.test")
+        await page.locator('#lab-login-form [name="password"]').fill("synthetic-password")
+        await page.locator('#lab-login-form [type="submit"]').click()
         await expect(page.locator('.lab-card a[href="https://example.test/sim"]')).to_have_count(1)
-        passed("project cards, detail, simulation launch link and local persistence")
+        await page.locator('[data-project-action="logout"]').click()
+        await expect(page.locator('.lab-card a[href="https://example.test/sim"]')).to_have_count(0)
+        state["allowed"] = False
+        passed("cross-device cloud storage, relogin restore, no project data in browser storage")
         passed("existing navigation and search")
 
         await page.locator('[data-tab="personal"]').click()
