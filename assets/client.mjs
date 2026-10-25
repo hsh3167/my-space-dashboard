@@ -56,7 +56,7 @@ export class AssetClient {
       const allowed = await this.fetchJSON('/rest/v1/rpc/asset_access_allowed', { token: token.access_token, method: 'POST', body: {} });
       if (epoch !== this.epoch) throw new Error('로그인이 취소되었습니다.');
       if (allowed !== true) throw new Error('등록된 본인 계정만 자산관리를 사용할 수 있습니다.');
-      const lifetime = Math.max(1, Math.min(Number(token.expires_in) || 3600, 3600));
+      const lifetime = Math.max(1, Math.min(Number(token.expires_in) || 3600, 20 * 60));
       // Access token only, held in memory. Refresh token/password are never persisted.
       this.session = { accessToken: token.access_token, userId: user.id, expiresAt: Date.now() + lifetime * 1000 };
       this.state = 'authorized'; this.timer = setTimeout(() => this.lock(), lifetime * 1000); this.timer.unref?.(); this.emit();
