@@ -69,9 +69,8 @@ test('all holdings are loaded across the Supabase row cap, including custom limi
 
 test('asset session expires no later than 20 minutes from login', async () => {
   const client = new AssetClient(config, async path => auth(path));
-  const before = Date.now();
   await client.login('synthetic@example.test', 'synthetic-password');
-  const max = client.session.expiresAt - before;
+  const max = client.session.expiresAt - Date.now();
   assert.ok(max > 0 && max <= 20 * 60 * 1000);
   client.session.expiresAt = Date.now() - 1;
   await assert.rejects(client.request('asset_accounts?select=id'), /먼저 본인/);
