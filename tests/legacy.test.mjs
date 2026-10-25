@@ -9,10 +9,11 @@ async function app(url = 'https://example.test/') {
   dom.window.confirm = () => true;
   dom.window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
   dom.window.HTMLDialogElement.prototype.close = function () { this.open = false; };
+  dom.window.eval(await readFile(new URL('../projects.js', import.meta.url), 'utf8'));
   dom.window.eval(await readFile(new URL('../app.js', import.meta.url), 'utf8'));
   return dom;
 }
-test('existing personal/work/office navigation, search and assets boundary', async () => {
+test('existing personal/work/project navigation, search and assets boundary', async () => {
   const dom = await app(); const { document: d, Event } = dom.window;
   try {
     assert.equal(d.querySelector('#link-counter').textContent, '16 LINKS');
@@ -22,8 +23,10 @@ test('existing personal/work/office navigation, search and assets boundary', asy
     d.querySelector('[data-tab="work"]').click();
     assert.equal(d.querySelector('#link-counter').textContent, '6 LINKS');
     assert.equal(d.querySelectorAll('#dashboard-grid .section-card').length, 3);
-    d.querySelector('[data-tab="office"]').click();
-    assert.equal(d.querySelector('#grid-heading').textContent, 'AI 사무실');
+    d.querySelector('[data-tab="projects"]').click();
+    assert.equal(d.querySelector('#grid-heading').textContent, '개인 프로젝트');
+    assert.equal(d.querySelectorAll('#dashboard-grid .lab-card').length, 6);
+    assert.ok(d.querySelector('a[href="https://hsh3167.github.io/my-space-dashboard/"]'));
     d.querySelector('[data-tab="assets"]').click();
     assert.equal(d.querySelector('#asset-workspace').hidden, false);
     assert.equal(d.querySelector('#breadcrumb-active').textContent, 'Assets');
@@ -55,6 +58,7 @@ test('link create/edit/delete, backup shape and legacy storage remain independen
     dom.window.HTMLAnchorElement.prototype.click = () => {};
     d.querySelector('#export-json').click();
     assert.equal(backup.app, 'myspace'); assert.equal(backup.links.workapps.length, 4);
+    assert.equal(backup.projects.length, 6);
     assert.equal(Object.keys(backup.links).includes('assets'), false);
   } finally { dom.window.close(); }
 });
