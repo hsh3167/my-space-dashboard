@@ -24,3 +24,13 @@
 .sites-sync{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;margin:0 0 12px;border:1px solid #303447;border-radius:10px;background:#181c29;color:#bfc3d8;font-size:11px}
 .sites-sync button{flex-shrink:0;border:1px solid #5a5c8e;border-radius:7px;background:#282a45;color:#e4e6ff;padding:6px 10px;cursor:pointer}
 .sites-sync button:hover{background:#34385c}
+
+/* One account at the top right, shared by site shortcuts, project lab and assets. */
+.header-account{display:flex;align-items:center;gap:9px;min-width:0}
+.header-auth-status{font-size:11px;white-space:nowrap;color:#8adcb8;font-weight:600}
+.header-auth-button{display:inline-flex;align-items:center;justify-content:center;border:1px solid #5b5c92;background:#292c4e;color:#f4f3ff;padding:8px 14px;min-width:72px;font-weight:700;font-size:12px;line-height:1.2;border-radius:10px;white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s}
+.header-auth-button:hover{background:#383d66;border-color:#9292ce}
+.header-auth-button:focus-visible{outline:2px solid #aca7ff;outline-offset:3px}
+.header-auth-button.signed-in{border-color:#365e54;background:#1b352f;color:#c6f4db}
+.header-auth-button.signed-in:hover{background:#245246}
+@media(max-width:620px){.header-account{gap:5px}.header-auth-status{font-size:0}.header-auth-status:not([hidden])::before{content:'●';font-size:10px}.header-auth-button{padding:7px 10px;min-width:56px;font-size:11px}}
