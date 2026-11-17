@@ -112,7 +112,7 @@ async function submitEdit(ev){
    if(category!=='projects')data[category]=to;
    if(touchesCloud)data.projects=defaults().projects;
    if(!save())throw Error('로컬 링크 저장에 실패했습니다.');
-   closeEdit();render();notify('사이트가 저장되었습니다. 다른 PC에서도 로그인하면 표시됩니다.');
+   closeEdit();render();notify(touchesCloud?'사이트가 클라우드에 저장되었습니다.':'사이트가 이 브라우저에 저장되었습니다.');
  }catch(err){notify('저장 실패: '+err.message);}
  finally{siteSaving=false;btn.disabled=false;}
 }
