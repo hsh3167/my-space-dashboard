@@ -59,9 +59,26 @@
   let items = read(), selected = null, editing = null, filter = "all";
   let cloud = null, ready = false, busy = false, cloudPromise = null, cloudMessage = "";
   let personalSites = null;
+  const authObservers = new Set();
   const authDialog = document.createElement("dialog");
   authDialog.id = "lab-auth"; authDialog.className = "lab-dialog";
   document.body.append(authDialog);
+  const headerAuthButton = document.querySelector('#header-auth-button');
+  const headerAuthStatus = document.querySelector('#header-auth-status');
+  function emitAuth() {
+    const authorized=hasSession();
+    if (headerAuthButton) {
+      headerAuthButton.textContent=authorized ? '로그아웃' : '로그인';
+      headerAuthButton.classList.toggle('signed-in',authorized);
+      headerAuthButton.setAttribute('aria-label',authorized ? '본인 계정 로그아웃' : '본인 계정 로그인');
+    }
+    if (headerAuthStatus) {
+      headerAuthStatus.hidden=!authorized;
+      headerAuthStatus.textContent=authorized ? '● 로그인됨' : '';
+    }
+    for(const listener of authObservers)listener(authorized,authorized ? cloud.client : null);
+  }
+  headerAuthButton?.addEventListener('click',()=>hasSession()?logout():promptLogin());
   const hasSession = () => ready && cloud?.state === "authorized";
   const isSeed = id => defaults().some(p => p.id === id);
   const same = (a,b) => JSON.stringify(clean(a)) === JSON.stringify(clean(b));
@@ -79,6 +96,7 @@
       cloud.subscribe(state => {
         if (state === "locked") {
           ready = false; items = defaults(); personalSites = null;
+          emitAuth();
           if (editDialog.open) editDialog.close();
           if (detailDialog.open) detailDialog.close();
           refresh();
@@ -173,13 +191,19 @@
     personalSites=next;
     clearMigratedSnapshot();
   }
+  function logout() {
+    ready=false;items=defaults();personalSites=null;
+    void cloud?.logout();
+    emitAuth();
+    refresh();
+  }
   function promptLogin() {
     if (authDialog.open) return;
-    authDialog.innerHTML = '<form id="lab-login-form"><div class="lab-dialog-top"><span class="lab-overline">PRIVATE PROJECT SYNC</span><button class="lab-x" type="button" data-project-action="close-auth" aria-label="닫기">×</button></div>' +
-      '<h2>개인 사이트 · 프로젝트 로그인</h2><p class="lab-muted">자산관리와 같은 본인 계정으로 로그인하세요. 개인 제작 사이트와 프로젝트·링크·메모를 모든 PC에서 동기화합니다. 로그인 후 20분이 지나면 자동 로그아웃됩니다.</p>' +
+    authDialog.innerHTML = '<form id="lab-login-form"><div class="lab-dialog-top"><span class="lab-overline">MY SPACE ACCOUNT</span><button class="lab-x" type="button" data-project-action="close-auth" aria-label="닫기">×</button></div>' +
+      '<h2>My Space 로그인</h2><p class="lab-muted">한 번 로그인하면 개인 제작 사이트·개인 프로젝트·내 자산을 모두 사용할 수 있습니다. 20분 뒤 자동 로그아웃됩니다.</p>' +
       '<label>이메일<input name="email" type="email" autocomplete="username" required></label>' +
       '<label>비밀번호<input name="password" type="password" autocomplete="current-password" required></label>' +
-      '<p role="alert" class="lab-error" id="lab-auth-error"></p><div class="lab-dialog-actions"><button type="button" class="lab-secondary" data-project-action="close-auth">취소</button><button type="submit" class="lab-add">로그인 및 동기화</button></div></form>';
+      '<p role="alert" class="lab-error" id="lab-auth-error"></p><div class="lab-dialog-actions"><button type="button" class="lab-secondary" data-project-action="close-auth">취소</button><button type="submit" class="lab-add">로그인</button></div></form>';
     authDialog.showModal();
   }
   async function login(event) {
@@ -196,6 +220,7 @@
       items = await migrate();
       await migratePersonalSites();
       ready = true; cloudMessage = "Supabase 동기화 완료";
+      emitAuth();
       if (authDialog.open) authDialog.close();
       refresh();
     } catch(e) {
@@ -235,8 +260,8 @@
       (!q || [p.name,p.category,p.summary,p.notes,...p.links.map(l => l.label+" "+l.url)].join(" ").toLocaleLowerCase().includes(q)));
     const chips = Object.entries({all:"전체",...CATEGORY_NAMES}).map(([key,name]) => '<button type="button" class="lab-chip'+(filter===key?" active":"")+'" data-project-action="filter" data-project-filter="'+key+'" aria-pressed="'+(filter===key)+'">'+el(name)+'</button>').join("");
     const signedIn=hasSession();
-    const authBar='<div class="lab-sync"><div><strong>'+ (signedIn ? "● Supabase 동기화 중" : "○ 클라우드 로그인 필요") + '</strong><p>'+ (signedIn ? "본인 계정에 프로젝트 정보가 저장됩니다. 로그인 후 20분 자동 로그아웃됩니다." : "다른 PC에서도 동일한 프로젝트를 보려면 본인 계정으로 로그인하세요. 수정·추가도 로그인 후 가능합니다.") + '</p></div><div class="lab-sync-actions">'+
-      (signedIn ? '<button class="lab-secondary" type="button" data-project-action="refresh-cloud">동기화</button><button class="lab-secondary" type="button" data-project-action="logout">로그아웃</button>' : '<button class="lab-add" type="button" data-project-action="login">Supabase 로그인</button>')+'</div></div>';
+    const authBar='<div class="lab-sync"><div><strong>'+ (signedIn ? "● 클라우드 연결됨" : "○ 로그인 필요") + '</strong><p>'+ (signedIn ? "프로젝트 데이터가 본인 계정에 동기화됩니다." : "우측 상단 로그인 후 모든 컴퓨터에서 동일한 프로젝트를 열고 편집할 수 있습니다.") + '</p></div><div class="lab-sync-actions">'+
+      (signedIn ? '<button class="lab-secondary" type="button" data-project-action="refresh-cloud">동기화</button>' : '')+'</div></div>';
     return '<div class="lab-board">'+authBar+'<div class="lab-intro"><div><span class="lab-overline">PERSONAL DEVELOPMENT LAB</span><h2>내가 만든 프로젝트를 한곳에.</h2><p>GitHub · Google Drive · ChatGPT · 웹 시뮬레이터를 프로젝트 단위로 관리합니다.</p></div><button type="button" class="lab-add" data-project-action="add">+ 프로젝트 추가</button></div>'+
       '<div class="lab-stats"><span><b>'+items.length+'</b> 전체 프로젝트</span><span><b>'+items.filter(p=>p.links.some(l=>l.type==="github")).length+'</b> GitHub 연결</span><span><b>'+items.filter(p=>jump(p)).length+'</b> 실행 링크</span></div>'+
       '<div class="lab-chips" aria-label="프로젝트 분류">'+chips+'</div>'+
@@ -315,9 +340,7 @@
     else if (action==="detail") detail(id);
     else if (action==="edit") edit(id);
     else if (action==="add") edit(null);
-    else if (action==="login") promptLogin();
     else if (action==="close-auth") authDialog.close();
-    else if (action==="logout") {ready=false;items=defaults();personalSites=null;void cloud?.logout();refresh();}
     else if (action==="refresh-cloud") void reloadCloud();
     else if (action==="close-detail") detailDialog.close();
     else if (action==="close-edit") closeEdit();
@@ -367,6 +390,9 @@
     },
     signedIn:hasSession,
     openLogin:promptLogin,
+    logout,
+    assetClient:()=>hasSession()?cloud.client:null,
+    onAuthChange:fn=>{authObservers.add(fn);return()=>authObservers.delete(fn);},
     personalSites:()=>hasSession()?personalSites:null,
     savePersonalSites:async rows=>{
       if(!hasSession()||busy)throw Error('먼저 본인 계정으로 로그인해 주세요.');
@@ -382,4 +408,5 @@
       refresh();
     }
   };
+  emitAuth();
 })();
