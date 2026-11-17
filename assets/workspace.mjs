@@ -39,7 +39,7 @@ export function mountWorkspace(root, { config = defaultConfig, storage = globalT
     let auth = '';
     if (mode === 'private') {
       auth = authorized
-        ? `<div class="asset-session"><span>공통 계정으로 연결됨 · 우측 상단에서 로그아웃할 수 있습니다.</span><button type="button" class="ghost-button" data-asset-action="reload">새로고침</button></div>`
+        ? `<div class="asset-session"><span>공통 계정으로 연결됨 · 우측 상단에서 로그아웃할 수 있습니다.</span><button type="button" class="ghost-button" data-asset-action="reload">새로고침</button>${sharedAuth?'':'<button type="button" class="ghost-button" data-asset-action="logout">로그아웃</button>'}</div>`
         : sharedAuth
           ? `<section class="asset-panel asset-login"><h3>로그인이 필요합니다</h3><p>우측 상단의 <strong>로그인</strong> 버튼으로 로그인하면 본인 자산이 표시됩니다.</p><p><a href="./assets/password.html">비밀번호 처음 설정 / 재설정</a></p></section>`
           : `<section class="asset-panel asset-login"><h3>내 자산 로그인</h3><p>본인 계정으로 로그인하세요.</p>${client ? `<form data-asset-form="login" class="asset-form"><label>이메일<input name="email" type="email" autocomplete="username" required></label><label>비밀번호<input name="password" type="password" autocomplete="current-password" required></label><button class="primary-button" type="submit" ${busy || client.state === 'authenticating' ? 'disabled' : ''}>로그인</button></form><p><a href="./assets/password.html">비밀번호 처음 설정 / 재설정</a></p>` : '<p>Supabase 연결을 먼저 설정해 주세요.</p>'}
