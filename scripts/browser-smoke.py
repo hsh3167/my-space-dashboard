@@ -182,15 +182,16 @@ async def main():
         await page.locator('.lab-card').filter(has_text="리프팅 모듈").locator('[data-project-action="detail"]').click()
         await expect(page.locator("#lab-detail")).to_contain_text("리프팅 모듈")
         await page.locator('#lab-detail [data-project-action="close-detail"]').first.click()
-        await page.locator('#dashboard-grid [data-project-action="add"]').click()
-        await expect(page.locator("#lab-auth")).to_be_visible()
-        # Route the project session to the synthetic backend (same saved public config as assets).
+        # The header is the single login entry for projects, personal sites and assets.
         await page.evaluate("(cfg) => localStorage.setItem('myspace.assets.public-config.v1', JSON.stringify(cfg))", {"url": PROJECT, "publishableKey": PUBLIC_KEY})
+        await page.locator("#header-auth-button").click()
+        await expect(page.locator("#lab-auth")).to_be_visible()
         state["allowed"] = True
         await page.locator('#lab-login-form [name="email"]').fill("synthetic@example.test")
         await page.locator('#lab-login-form [name="password"]').fill("synthetic-password")
         await page.locator('#lab-login-form [type="submit"]').click()
-        await expect(page.locator(".lab-sync strong")).to_contain_text("Supabase")
+        await expect(page.locator(".lab-sync strong")).to_contain_text("클라우드")
+        await expect(page.locator("#header-auth-button")).to_have_text("로그아웃")
         await page.locator('#dashboard-grid [data-project-action="add"]').click()
         await page.locator('#lab-form [name="name"]').fill("브라우저 합성 프로젝트")
         await page.locator('#lab-form [name="category"]').select_option("simulation")
@@ -205,19 +206,19 @@ async def main():
         await page.reload(wait_until="domcontentloaded")
         await page.locator('[data-tab="projects"]').click()
         await expect(page.locator('.lab-card a[href="https://example.test/sim"]')).to_have_count(0)
-        await page.locator('[data-project-action="login"]').click()
+        await page.locator("#header-auth-button").click()
         await page.locator('#lab-login-form [name="email"]').fill("synthetic@example.test")
         await page.locator('#lab-login-form [name="password"]').fill("synthetic-password")
         await page.locator('#lab-login-form [type="submit"]').click()
         await expect(page.locator('.lab-card a[href="https://example.test/sim"]')).to_have_count(1)
-        await page.locator('[data-project-action="logout"]').click()
+        await page.locator("#header-auth-button").click()
         await expect(page.locator('.lab-card a[href="https://example.test/sim"]')).to_have_count(0)
         state["allowed"] = False
         passed("cross-device cloud storage, relogin restore, no project data in browser storage")
         passed("existing navigation and search")
 
         await page.locator('[data-tab="personal"]').click()
-        await page.locator("#add-site-global").click()
+        await page.locator("#header-auth-button").click()
         await expect(page.locator("#lab-auth")).to_be_visible()
         state["allowed"] = True
         await page.locator('#lab-login-form [name="email"]').fill("synthetic@example.test")
@@ -235,7 +236,7 @@ async def main():
         assert stored is None or "example.test/synthetic" not in stored
         await page.reload(wait_until="domcontentloaded")
         await expect(link).to_have_count(0)
-        await page.locator('.sites-sync [data-action="sync-login"]').click()
+        await page.locator("#header-auth-button").click()
         await page.locator('#lab-login-form [name="email"]').fill("synthetic@example.test")
         await page.locator('#lab-login-form [name="password"]').fill("synthetic-password")
         await page.locator('#lab-login-form [type="submit"]').click()
@@ -261,9 +262,15 @@ async def main():
         await page.locator("#reset-data").click()
         await expect(page.locator("#link-counter")).to_have_text("16 LINKS")
         passed("personal shortcuts persist across fresh login, edit/delete, JSON import/export, reset")
-        state["allowed"] = False  # Restore the denied-owner case for the following asset-security checks.
-        
+        # The same top-right login must unlock real assets with no second sign-in.
         await page.locator('[data-tab="assets"]').click()
+        await expect(page.locator("#asset-dashboard")).to_contain_text("합성 비공개")
+        assert await page.locator('[data-asset-form="login"]').count() == 0
+        await page.locator("#header-auth-button").click()
+        await expect(page.locator("#asset-dashboard")).to_be_empty()
+        await page.locator('[data-asset-action="demo"]').click()
+        state["allowed"] = False
+        passed("one top-right login unlocks assets, and global logout immediately hides private data")
         await expect(page.locator(".asset-stats .asset-stat").nth(0)).to_contain_text("95,000,000원")
         await expect(page.locator(".asset-stats .asset-stat").nth(1)).to_contain_text("85,000,000원")
         await expect(page.locator(".asset-mode-badge")).to_have_text("샘플 데이터")
@@ -281,30 +288,22 @@ async def main():
 
         await page.locator('[data-asset-action="private"]').click()
         await expect(page.locator("#asset-dashboard")).to_be_empty()
-        await page.locator("#asset-auth details summary").click()
-        config = page.locator('[data-asset-form="config"]')
-        await config.locator('[name="url"]').fill(PROJECT)
-        await config.locator('[name="publishableKey"]').fill("sb_secret_do_not_use_synthetic")
-        await config.locator('[type="submit"]').click()
-        await expect(page.locator("#asset-message")).to_contain_text("공개 publishable/anon")
-        await page.locator("#asset-auth details summary").click()
-        await config.locator('[name="url"]').fill(PROJECT)
-        await config.locator('[name="publishableKey"]').fill(PUBLIC_KEY)
-        await config.locator('[type="submit"]').click()
+        await expect(page.locator("#lab-auth")).to_be_visible()
+        assert await page.locator('[data-asset-form="login"]').count() == 0
         assert state["financial"] == 0
 
         async def login():
-            form = page.locator('[data-asset-form="login"]')
-            await form.locator('[name="email"]').fill("synthetic@example.test")
-            await form.locator('[name="password"]').fill("synthetic-password")
-            await form.locator('[type="submit"]').click()
+            await page.locator('#lab-login-form [name="email"]').fill("synthetic@example.test")
+            await page.locator('#lab-login-form [name="password"]').fill("synthetic-password")
+            await page.locator('#lab-login-form [type="submit"]').click()
 
         await login()
-        await expect(page.locator("#asset-message")).to_contain_text("등록된 본인 계정만")
+        await expect(page.locator("#lab-auth-error")).to_contain_text("등록된 본인 계정만")
         assert state["financial"] == 0
-        passed("no financial requests before login/owner approval; secret keys and other user blocked")
+        passed("no financial requests before login/owner approval; unapproved user blocked")
         state["allowed"] = True
         await login()
+        await expect(page.locator("#header-auth-button")).to_have_text("로그아웃")
         await expect(page.locator("#asset-dashboard")).to_contain_text("합성 비공개")
         stored = await page.evaluate("JSON.stringify(localStorage)")
         assert TOKEN not in stored and "synthetic-password" not in stored and "합성 비공개" not in stored
@@ -363,7 +362,7 @@ async def main():
 
         state["delay"] = True
         await page.locator('[data-asset-action="reload"]').click()
-        await page.locator('[data-asset-action="logout"]').click()
+        await page.locator("#header-auth-button").click()
         release.set()
         await expect(page.locator("#asset-dashboard")).to_be_empty()
         await expect(page.locator("#asset-import")).to_have_count(0)
