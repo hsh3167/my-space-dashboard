@@ -53,7 +53,7 @@ async def main():
             ("amr-sim","AMR 동역학 시뮬레이션","simulation",[])
         ]
     ]
-    state = {"allowed": False, "verified": False, "financial": 0, "imports": [], "fingerprints": set(), "delay": False}
+    state = {"allowed": False, "verified": False, "financial": 0, "personal_sites": None, "imports": [], "fingerprints": set(), "delay": False}
     release = asyncio.Event()
     page_errors = []
     checks = []
@@ -85,7 +85,7 @@ async def main():
         else:
             assert state["verified"], "Financial request before owner authorization"
             assert request.headers.get("authorization") == f"Bearer {TOKEN}"
-            if not path.startswith("/rest/v1/project_hub_projects"):
+            if not path.startswith(("/rest/v1/project_hub_projects", "/rest/v1/dashboard_personal_sites")):
                 state["financial"] += 1
             if path.startswith("/rest/v1/project_hub_projects"):
                 ident = None
@@ -105,6 +105,16 @@ async def main():
                 elif request.method == "DELETE":
                     projects[:] = [record for record in projects if record["id"] != ident]
                     result = []
+            elif path.startswith("/rest/v1/dashboard_personal_sites"):
+                if request.method == "GET":
+                    if "select=owner_id" in path:
+                        result = [] if state["personal_sites"] is None else [{"owner_id": "10000000-0000-4000-8000-000000000001"}]
+                    else:
+                        result = [] if state["personal_sites"] is None else [{"sites": copy.deepcopy(state["personal_sites"])}]
+                elif request.method in ("POST", "PATCH"):
+                    assert isinstance(body.get("sites"), list)
+                    state["personal_sites"] = copy.deepcopy(body["sites"])
+                    result = [{"sites": copy.deepcopy(state["personal_sites"])}]
             elif path.startswith("/rest/v1/asset_") and request.method == "GET":
                 table = path.split("?", 1)[0].split("_")[-1]
                 result = copy.deepcopy(data[table])
@@ -208,12 +218,27 @@ async def main():
 
         await page.locator('[data-tab="personal"]').click()
         await page.locator("#add-site-global").click()
+        await expect(page.locator("#lab-auth")).to_be_visible()
+        state["allowed"] = True
+        await page.locator('#lab-login-form [name="email"]').fill("synthetic@example.test")
+        await page.locator('#lab-login-form [name="password"]').fill("synthetic-password")
+        await page.locator('#lab-login-form [type="submit"]').click()
+        await expect(page.locator(".sites-sync")).to_contain_text("Supabase")
+        await page.locator("#add-site-global").click()
         await page.locator("#edit-name").fill("브라우저 합성 프로젝트")
         await page.locator("#edit-url").fill("https://example.test/synthetic")
         await page.locator('#site-form [type="submit"]').click()
         link = page.locator('a[href="https://example.test/synthetic"]')
         await expect(link).to_have_count(1)
+        assert any(s["url"] == "https://example.test/synthetic" for s in state["personal_sites"])
+        stored = await page.evaluate("localStorage.getItem('myspace.dashboard.v1')")
+        assert stored is None or "example.test/synthetic" not in stored
         await page.reload(wait_until="domcontentloaded")
+        await expect(link).to_have_count(0)
+        await page.locator('.sites-sync [data-action="sync-login"]').click()
+        await page.locator('#lab-login-form [name="email"]').fill("synthetic@example.test")
+        await page.locator('#lab-login-form [name="password"]').fill("synthetic-password")
+        await page.locator('#lab-login-form [type="submit"]').click()
         await expect(link).to_have_count(1)
         edit = page.locator('.project-slot.filled').filter(has=link).locator('[data-action="edit"]')
         await edit.click()
@@ -235,8 +260,8 @@ async def main():
         page.once("dialog", lambda dialog: dialog.accept())
         await page.locator("#reset-data").click()
         await expect(page.locator("#link-counter")).to_have_text("16 LINKS")
-        passed("link add/edit/delete, reload persistence, JSON export/import, reset")
-
+        passed("personal shortcuts persist across fresh login, edit/delete, JSON import/export, reset")
+        
         await page.locator('[data-tab="assets"]').click()
         await expect(page.locator(".asset-stats .asset-stat").nth(0)).to_contain_text("95,000,000원")
         await expect(page.locator(".asset-stats .asset-stat").nth(1)).to_contain_text("85,000,000원")
