@@ -125,7 +125,7 @@
     const hex = x => typeof x === 'string' && /^#[0-9a-f]{6}$/i.test(x);
     return {
       id:item.id.slice(0,80),name:item.name.slice(0,45),
-      url:typeof item.url === 'string' && (!item.url || safe(item.url)) ? item.url.slice(0,500) : '',
+      url:typeof item.url === 'string' && (!item.url || (()=>{try{return ['https:','http:'].includes(new URL(item.url).protocol);}catch{return false;}})()) ? item.url.slice(0,500) : '',
       initial:typeof item.initial === 'string' ? item.initial.slice(0,3) : '↗',
       color:hex(item.color) ? item.color : '#b7baff',
       bg:hex(item.bg) ? item.bg : '#293247'
