@@ -35,31 +35,48 @@ test('existing personal/work/project navigation, search and assets boundary', as
     assert.equal(d.querySelector('#link-counter').textContent, '16 LINKS');
   } finally { dom.window.close(); }
 });
-test('link create/edit/delete, backup shape and legacy storage remain independent', async () => {
-  const dom = await app(); const { document: d, Event } = dom.window;
+test('personal site links require login, save to cloud and stay out of browser storage', async () => {
+  const dom = await app(); const { document:d, Event } = dom.window;
   try {
+    // An unauthenticated click must not silently write to the old localStorage key.
     d.querySelector('#add-site-global').click();
-    d.querySelector('#edit-name').value = 'Synthetic project'; d.querySelector('#edit-url').value = 'example.com';
-    d.querySelector('#site-form').dispatchEvent(new Event('submit', { cancelable: true }));
-    let saved = JSON.parse(dom.window.localStorage.getItem('myspace.dashboard.v1'));
-    assert.equal(saved.projects.at(-1).url, 'https://example.com');
-    const id = saved.projects.at(-1).id;
+    assert.equal(d.querySelector('#lab-auth').open,true);
+    assert.equal(dom.window.localStorage.getItem('myspace.dashboard.v1'),null);
+    d.querySelector('#lab-auth').close();
+
+    const slots=Array.from({length:5},(_,i)=>({id:'slot-'+(i+1),name:'사이트 '+String(i+1).padStart(2,'0'),url:'',initial:'+',color:'#a7a6cb',bg:'#252b3a'}));
+    let cloudSites=slots;
+    dom.window.ProjectHub.signedIn=()=>true;
+    dom.window.ProjectHub.personalSites=()=>cloudSites;
+    dom.window.ProjectHub.savePersonalSites=async sites=>{cloudSites=sites;};
+
+    d.querySelector('#add-site-global').click();
+    d.querySelector('#edit-name').value='Synthetic project';d.querySelector('#edit-url').value='example.com';
+    d.querySelector('#site-form').dispatchEvent(new Event('submit',{cancelable:true}));
+    await new Promise(resolve=>setTimeout(resolve,0));
+    assert.equal(cloudSites.at(-1).url,'https://example.com');
+    let saved=JSON.parse(dom.window.localStorage.getItem('myspace.dashboard.v1'));
+    assert.ok(!Object.hasOwn(saved,'projects'),'cloud links must not be copied to localStorage');
+    const id=cloudSites.at(-1).id;
+
     d.querySelector(`button[data-id="${id}"]`).click();
-    d.querySelector('#edit-name').value = 'Edited project';
-    d.querySelector('#site-form').dispatchEvent(new Event('submit', { cancelable: true }));
-    saved = JSON.parse(dom.window.localStorage.getItem('myspace.dashboard.v1'));
-    assert.equal(saved.projects.at(-1).name, 'Edited project');
-    d.querySelector(`button[data-id="${id}"]`).click(); d.querySelector('#delete-site').click();
-    assert.equal(JSON.parse(dom.window.localStorage.getItem('myspace.dashboard.v1')).projects.length, 5);
+    d.querySelector('#edit-name').value='Edited project';
+    d.querySelector('#site-form').dispatchEvent(new Event('submit',{cancelable:true}));
+    await new Promise(resolve=>setTimeout(resolve,0));
+    assert.equal(cloudSites.at(-1).name,'Edited project');
+    d.querySelector(`button[data-id="${id}"]`).click();d.querySelector('#delete-site').click();
+    await new Promise(resolve=>setTimeout(resolve,0));
+    assert.equal(cloudSites.length,5);
+
     let backup;
-    dom.window.Blob = class { constructor(parts) { this.parts = parts; } };
-    dom.window.URL.createObjectURL = blob => { backup = JSON.parse(blob.parts[0]); return 'blob:synthetic'; };
-    dom.window.URL.revokeObjectURL = () => {};
-    dom.window.HTMLAnchorElement.prototype.click = () => {};
+    dom.window.Blob=class{constructor(parts){this.parts=parts;}};
+    dom.window.URL.createObjectURL=blob=>{backup=JSON.parse(blob.parts[0]);return 'blob:synthetic';};
+    dom.window.URL.revokeObjectURL=()=>{};
+    dom.window.HTMLAnchorElement.prototype.click=()=>{};
     d.querySelector('#export-json').click();
-    assert.equal(backup.app, 'myspace'); assert.equal(backup.links.workapps.length, 4);
-    assert.equal(backup.projects.length, 6);
-    assert.equal(Object.keys(backup.links).includes('assets'), false);
+    assert.equal(backup.app,'myspace');assert.equal(backup.links.workapps.length,4);
+    assert.equal(backup.links.projects.length,5);assert.equal(backup.projects.length,6);
+    assert.equal(Object.keys(backup.links).includes('assets'),false);
   } finally { dom.window.close(); }
 });
 test('asset deep link opens only its workspace, leaving default link tabs public', async () => {
