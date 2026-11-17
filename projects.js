@@ -58,6 +58,7 @@
   }
   let items = read(), selected = null, editing = null, filter = "all";
   let cloud = null, ready = false, busy = false, cloudPromise = null, cloudMessage = "";
+  let personalSites = null;
   const authDialog = document.createElement("dialog");
   authDialog.id = "lab-auth"; authDialog.className = "lab-dialog";
   document.body.append(authDialog);
@@ -77,7 +78,7 @@
       cloud = new module.ProjectCloud(connection);
       cloud.subscribe(state => {
         if (state === "locked") {
-          ready = false; items = defaults();
+          ready = false; items = defaults(); personalSites = null;
           if (editDialog.open) editDialog.close();
           if (detailDialog.open) detailDialog.close();
           refresh();
@@ -117,10 +118,65 @@
     if (legacyPresent) localStorage.removeItem(KEY);
     return synced;
   }
+  // Only upload legacy browser shortcuts after a verified owner login.
+  // A newer cloud record is authoritative; unique local URLs are preserved.
+  function cleanSite(item) {
+    if (!item || typeof item.id !== 'string' || typeof item.name !== 'string') return null;
+    const hex = x => typeof x === 'string' && /^#[0-9a-f]{6}$/i.test(x);
+    return {
+      id:item.id.slice(0,80),name:item.name.slice(0,45),
+      url:typeof item.url === 'string' && (!item.url || safe(item.url)) ? item.url.slice(0,500) : '',
+      initial:typeof item.initial === 'string' ? item.initial.slice(0,3) : '↗',
+      color:hex(item.color) ? item.color : '#b7baff',
+      bg:hex(item.bg) ? item.bg : '#293247'
+    };
+  }
+  const cleanSites = rows => Array.isArray(rows) ? rows.slice(0,100).map(cleanSite).filter(Boolean) : null;
+  const isStarterSites = rows => Array.isArray(rows) && rows.length===5 && rows.every((x,i)=>x.id==='slot-'+(i+1)&&x.name==='사이트 '+String(i+1).padStart(2,'0')&&!x.url);
+  function localSiteSnapshot() {
+    try { return cleanSites(JSON.parse(localStorage.getItem(MAIN_KEY)||'null')?.projects); }
+    catch { return null; }
+  }
+  function clearMigratedSnapshot() {
+    // Do not let a stale browser cache resurrect a link removed on another device.
+    try {
+      const state=JSON.parse(localStorage.getItem(MAIN_KEY)||'null');
+      if(state && typeof state==='object' && Object.hasOwn(state,'projects')){
+        delete state.projects;
+        localStorage.setItem(MAIN_KEY,JSON.stringify(state));
+      }
+    } catch { /* The old snapshot can be retried on the next login. */ }
+  }
+  async function migratePersonalSites() {
+    const remote=cleanSites(await cloud.listPersonalSites());
+    const local=localSiteSnapshot();
+    let next=remote;
+    if(local && !isStarterSites(local)){
+      if(remote===null) next=local;
+      else{
+        const urls=new Set(remote.filter(x=>x.url).map(x=>x.url));
+        const ids=new Set(remote.map(x=>x.id));
+        const additions=[];
+        for(const item of local){
+          if(!item.url||urls.has(item.url))continue;
+          const copy={...item};
+          if(ids.has(copy.id)){
+            copy.id=('migrated-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8)).slice(0,80);
+            copy.name=(copy.name+' (기존 PC)').slice(0,45);
+          }
+          ids.add(copy.id);urls.add(copy.url);additions.push(copy);
+        }
+        if(additions.length)next=[...remote,...additions].slice(0,100);
+      }
+    }
+    if(next!==remote)await cloud.savePersonalSites(next);
+    personalSites=next;
+    clearMigratedSnapshot();
+  }
   function promptLogin() {
     if (authDialog.open) return;
     authDialog.innerHTML = '<form id="lab-login-form"><div class="lab-dialog-top"><span class="lab-overline">PRIVATE PROJECT SYNC</span><button class="lab-x" type="button" data-project-action="close-auth" aria-label="닫기">×</button></div>' +
-      '<h2>개인 프로젝트 로그인</h2><p class="lab-muted">자산관리와 같은 본인 계정으로 로그인하세요. 등록한 프로젝트·링크·메모를 모든 PC에서 동기화합니다. 로그인 후 20분이 지나면 자동 로그아웃됩니다.</p>' +
+      '<h2>개인 사이트 · 프로젝트 로그인</h2><p class="lab-muted">자산관리와 같은 본인 계정으로 로그인하세요. 개인 제작 사이트와 프로젝트·링크·메모를 모든 PC에서 동기화합니다. 로그인 후 20분이 지나면 자동 로그아웃됩니다.</p>' +
       '<label>이메일<input name="email" type="email" autocomplete="username" required></label>' +
       '<label>비밀번호<input name="password" type="password" autocomplete="current-password" required></label>' +
       '<p role="alert" class="lab-error" id="lab-auth-error"></p><div class="lab-dialog-actions"><button type="button" class="lab-secondary" data-project-action="close-auth">취소</button><button type="submit" class="lab-add">로그인 및 동기화</button></div></form>';
@@ -138,6 +194,7 @@
       const client = await ensureCloud();
       await client.login(email,password);
       items = await migrate();
+      await migratePersonalSites();
       ready = true; cloudMessage = "Supabase 동기화 완료";
       if (authDialog.open) authDialog.close();
       refresh();
@@ -150,7 +207,11 @@
   async function reloadCloud() {
     if (!hasSession() || busy) return;
     busy = true;
-    try { items = (await cloud.list()).map(clean).filter(Boolean); cloudMessage = "Supabase 최신 데이터"; }
+    try {
+      items=(await cloud.list()).map(clean).filter(Boolean);
+      personalSites=cleanSites(await cloud.listPersonalSites());
+      cloudMessage="Supabase 최신 데이터";
+    }
     catch(e) {cloudMessage="새로고침 실패: "+e.message;}
     finally {busy=false;refresh();}
   }
@@ -256,7 +317,7 @@
     else if (action==="add") edit(null);
     else if (action==="login") promptLogin();
     else if (action==="close-auth") authDialog.close();
-    else if (action==="logout") {ready=false;items=defaults();void cloud?.logout();refresh();}
+    else if (action==="logout") {ready=false;items=defaults();personalSites=null;void cloud?.logout();refresh();}
     else if (action==="refresh-cloud") void reloadCloud();
     else if (action==="close-detail") detailDialog.close();
     else if (action==="close-edit") closeEdit();
@@ -304,6 +365,21 @@
       localStorage.removeItem(KEY);
       if(!hasSession()){items=defaults();refresh();}
     },
-    signedIn:hasSession
+    signedIn:hasSession,
+    openLogin:promptLogin,
+    personalSites:()=>hasSession()?personalSites:null,
+    savePersonalSites:async rows=>{
+      if(!hasSession()||busy)throw Error('먼저 본인 계정으로 로그인해 주세요.');
+      const sanitized=cleanSites(rows);
+      if(!sanitized||sanitized.length!==rows.length)throw Error('저장할 사이트 형식을 확인하세요.');
+      await cloud.savePersonalSites(sanitized);
+      personalSites=sanitized;
+      refresh();
+    },
+    refreshPersonalSites:async()=>{
+      if(!hasSession()||busy)throw Error('먼저 본인 계정으로 로그인해 주세요.');
+      personalSites=cleanSites(await cloud.listPersonalSites());
+      refresh();
+    }
   };
 })();
