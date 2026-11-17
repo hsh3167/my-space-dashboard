@@ -56,21 +56,24 @@ function defaults(){return {
 function loadData(){try{const stored=JSON.parse(localStorage.getItem(STORAGE_KEY));if(stored && typeof stored==='object' && !Array.isArray(stored)){const base=defaults();Object.keys(base).forEach(k=>{if(Array.isArray(stored[k]))base[k]=stored[k].filter(x=>x&&typeof x.id==='string'&&typeof x.name==='string').map(x=>({id:x.id.slice(0,80),name:x.name.slice(0,45),url:typeof x.url==='string'?x.url.slice(0,500):'',initial:typeof x.initial==='string'?x.initial.slice(0,3):'↗',color:typeof x.color==='string'&&/^#[0-9a-f]{6}$/i.test(x.color)?x.color:'#b7baff',bg:typeof x.bg==='string'&&/^#[0-9a-f]{6}$/i.test(x.bg)?x.bg:'#2b2e41'})).slice(0,100);});return base;}}catch(e){console.warn('Local data could not be loaded',e);}return defaults();}
 const requestedView=new URLSearchParams(location.search).get('view');
 let data=loadData(),currentTab=requestedView==='office'?'projects':(['work','projects','assets'].includes(requestedView)?requestedView:'personal'),query='',editing=null,toastTimer;
-function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));return true;}catch(err){notify('이 브라우저에서는 저장할 수 없습니다. JSON으로 백업해 주세요.');return false;}}
+function save(){try{const snapshot={...data};if(window.ProjectHub?.signedIn())delete snapshot.projects;localStorage.setItem(STORAGE_KEY,JSON.stringify(snapshot));return true;}catch(err){notify('이 브라우저에서는 저장할 수 없습니다. JSON으로 백업해 주세요.');return false;}}
 const $=s=>document.querySelector(s);
 function isSafeUrl(url){try{let u=new URL(url);return ['https:','http:'].includes(u.protocol);}catch{return false;}}
 function domain(url){if(!url)return '주소를 등록하세요';try{let d=new URL(url).hostname;return d.replace(/^www\./,'');}catch{return '주소를 확인하세요';}}
 function iconLogo(item){const c=/^#[0-9a-f]{6}$/i.test(item.color)?item.color:'#c1c5e1',b=/^#[0-9a-f]{6}$/i.test(item.bg)?item.bg:'#2e3042';return `<span class="site-logo" style="--logo-bg:${b};--logo-fg:${c}">${esc(item.initial||item.name[0]||'↗')}</span>`;}
 function siteRow(item,category){const url=isSafeUrl(item.url)?item.url:'';return `<div class="site-row"><a class="site-link" href="${esc(url||'#')}" ${url?'target="_blank" rel="noopener noreferrer"':'data-empty="true"'} data-id="${esc(item.id)}" data-cat="${category}" title="${esc(item.name)}">${iconLogo(item)}<span class="site-labels"><strong>${esc(item.name)}</strong><small>${esc(domain(item.url))}</small></span></a><span class="external">${icon('external')}</span><button class="site-edit" title="수정" aria-label="${esc(item.name)} 수정" data-action="edit" data-id="${esc(item.id)}" data-cat="${category}">···</button></div>`;}
-function filteredItems(category){const list=data[category]||[];if(!query)return list;const m=CATEGORY_META[category];if((m.label+' '+m.sub).toLocaleLowerCase().includes(query))return list;return list.filter(x=>(x.name+' '+x.url).toLocaleLowerCase().includes(query));}
+function itemsFor(category){if(category==='projects'&&window.ProjectHub?.signedIn()){const remote=window.ProjectHub.personalSites();if(Array.isArray(remote))return remote;}return data[category]||[];}
+function filteredItems(category){const list=itemsFor(category);if(!query)return list;const m=CATEGORY_META[category];if((m.label+' '+m.sub).toLocaleLowerCase().includes(query))return list;return list.filter(x=>(x.name+' '+x.url).toLocaleLowerCase().includes(query));}
 function cardHeader(category,count){let m=CATEGORY_META[category];return `<div class="card-heading"><span class="section-icon ${m.accent}">${icon(m.icon)}</span><span class="card-title"><h3>${esc(m.label)}</h3><p>${esc(m.sub)}</p></span><button class="section-add" type="button" data-action="add" data-cat="${category}" aria-label="${esc(m.label)} 링크 추가" title="링크 추가">+</button></div>`;}
 function projectItem(item){const url=isSafeUrl(item.url)?item.url:null;if(!url)return `<button type="button" class="project-slot" data-action="edit" data-id="${esc(item.id)}" data-cat="projects" title="클릭해서 사이트 등록"><span class="project-icon">+</span><strong>${esc(item.name)}</strong><small>사이트 등록</small></button>`;return `<div class="project-slot filled" style="position:relative"><a href="${esc(url)}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;flex-direction:column;gap:9px;max-width:100%" title="${esc(item.name)} 열기"><span class="project-icon">↗</span><strong>${esc(item.name)}</strong><small>사이트 열기</small></a><button type="button" data-action="edit" data-id="${esc(item.id)}" data-cat="projects" style="position:absolute;right:3px;top:3px;border:0;background:transparent;color:#a9a9bc" aria-label="${esc(item.name)} 수정">···</button></div>`;}
 function card(category){let items=filteredItems(category);if(query && items.length===0)return '';
 const type=category==='projects'?' projects':'';
 let body=category==='projects'?`<div class="projects-list">${items.map(projectItem).join('')}</div>`:`<div class="site-list">${items.map(x=>siteRow(x,category)).join('')}</div>`;
 if(!query && WORK_IDS.includes(category) && items.length===0)body=`<div class="work-empty"><p>아직 등록된 사이트가 없습니다.</p><button type="button" data-action="add" data-cat="${category}">+ 사이트 추가하기</button></div>`;
-return `<section class="section-card${type}${WORK_IDS.includes(category)?' work-category':''}">${cardHeader(category,items.length)}${body}</section>`;}
-function render(){const isAssets=currentTab==='assets';document.body.classList.toggle('asset-active',isAssets);$('#asset-workspace').hidden=!isAssets;window.dispatchEvent(new CustomEvent('myspace:workspace',{detail:{tab:currentTab}}));if(isAssets){document.querySelectorAll('[data-tab]').forEach(b=>{b.classList.toggle('active',b.dataset.tab===currentTab);b.setAttribute('aria-pressed',String(b.dataset.tab===currentTab));});$('#breadcrumb-active').textContent='Assets';return;}const isWork=currentTab==='work',isProjects=currentTab==='projects';document.querySelector('.hero').hidden=isWork;document.querySelector('.bear-banner').hidden=!isWork;document.querySelectorAll('[data-tab]').forEach(b=>{b.classList.toggle('active',b.dataset.tab===currentTab);b.setAttribute('aria-pressed',String(b.dataset.tab===currentTab));});$('#breadcrumb-active').textContent=isWork?'Work':'Personal';$('#hero-view').textContent=isWork?'WORK':'PERSONAL';$('#hero-title').innerHTML=isWork?'오늘의 업무를, <em>더 간결하게.</em>':'모든 것을, <em>한 곳에.</em>';$('#hero-subtitle').innerHTML=isWork?'Slack부터 일정과 파일까지.<br class="desktop-break"> 업무에 필요한 도구에 바로 접근하세요.':'자주 가는 사이트부터 나만의 프로젝트까지.<br class="desktop-break"> 필요한 모든 링크를 가장 빠르게 찾아보세요.';$('#grid-heading').textContent=isWork?'업무용 워크스페이스':'즐겨찾기 라이브러리';$('#grid-subheading').textContent=isWork?'핵심 도구, 부품 구매, 회사 시스템을 한 곳에서 관리하세요.':'필요한 도구를 카테고리별로 정리했습니다.';
+const sync=category==='projects' ? '<div class="sites-sync"><span>'+ (window.ProjectHub?.signedIn() ? '● Supabase 클라우드에 저장 · 다른 PC에서도 동일하게 표시됩니다.' : '○ 이 PC의 임시 링크 · 다른 PC에서도 보려면 로그인하세요.')+'</span><button type="button" data-action="'+(window.ProjectHub?.signedIn() ? 'sync-refresh' : 'sync-login')+'">'+(window.ProjectHub?.signedIn() ? '새로고침' : '로그인')+'</button></div>' : '';
+return `<section class="section-card${type}${WORK_IDS.includes(category)?' work-category':''}">${cardHeader(category,items.length)}${sync}${body}</section>`;}
+let previousSiteLogin=false;
+function render(){const signed=window.ProjectHub?.signedIn()===true;if(previousSiteLogin&&!signed)data.projects=defaults().projects;previousSiteLogin=signed;const isAssets=currentTab==='assets';document.body.classList.toggle('asset-active',isAssets);$('#asset-workspace').hidden=!isAssets;window.dispatchEvent(new CustomEvent('myspace:workspace',{detail:{tab:currentTab}}));if(isAssets){document.querySelectorAll('[data-tab]').forEach(b=>{b.classList.toggle('active',b.dataset.tab===currentTab);b.setAttribute('aria-pressed',String(b.dataset.tab===currentTab));});$('#breadcrumb-active').textContent='Assets';return;}const isWork=currentTab==='work',isProjects=currentTab==='projects';document.querySelector('.hero').hidden=isWork;document.querySelector('.bear-banner').hidden=!isWork;document.querySelectorAll('[data-tab]').forEach(b=>{b.classList.toggle('active',b.dataset.tab===currentTab);b.setAttribute('aria-pressed',String(b.dataset.tab===currentTab));});$('#breadcrumb-active').textContent=isWork?'Work':'Personal';$('#hero-view').textContent=isWork?'WORK':'PERSONAL';$('#hero-title').innerHTML=isWork?'오늘의 업무를, <em>더 간결하게.</em>':'모든 것을, <em>한 곳에.</em>';$('#hero-subtitle').innerHTML=isWork?'Slack부터 일정과 파일까지.<br class="desktop-break"> 업무에 필요한 도구에 바로 접근하세요.':'자주 가는 사이트부터 나만의 프로젝트까지.<br class="desktop-break"> 필요한 모든 링크를 가장 빠르게 찾아보세요.';$('#grid-heading').textContent=isWork?'업무용 워크스페이스':'즐겨찾기 라이브러리';$('#grid-subheading').textContent=isWork?'핵심 도구, 부품 구매, 회사 시스템을 한 곳에서 관리하세요.':'필요한 도구를 카테고리별로 정리했습니다.';
 if(isProjects){
   $('#breadcrumb-active').textContent='Project Lab';$('#hero-view').textContent='PROJECT LAB';
   $('#hero-title').innerHTML='내 프로젝트를, <em>한 곳에.</em>';
@@ -82,29 +85,79 @@ if(isProjects){
   $('#clear-search').classList.toggle('hidden',!query);
   return;
 }
-const categories=isWork?WORK_IDS:PERSONAL_IDS;let allItems=categories.flatMap(cat=>data[cat]||[]),activeItems=allItems.filter(x=>isSafeUrl(x.url));$('#link-counter').textContent=`${activeItems.length} LINKS`;
+const categories=isWork?WORK_IDS:PERSONAL_IDS;let allItems=categories.flatMap(cat=>itemsFor(cat)),activeItems=allItems.filter(x=>isSafeUrl(x.url));$('#link-counter').textContent=`${activeItems.length} LINKS`;
 let html=categories.map(card).join('');
 if(!query&&!isWork)html+=`<section class="section-card nudge"><div class="nudge-icon">✧</div><h3>당신만의 공간으로<br>채워 보세요.</h3><p>사이트를 추가하거나 원하는 이름과<br>주소로 변경할 수 있습니다.</p><button type="button" data-action="add" data-cat="projects">개인 사이트 추가하기 →</button></section>`;
 $('#dashboard-grid').classList.toggle('work-grid',isWork);$('#dashboard-grid').innerHTML=html||`<div class="empty-search"><h3>검색 결과가 없습니다.</h3><p>다른 검색어를 입력하거나 검색어를 지워보세요.</p></div>`;
 $('#clear-search').classList.toggle('hidden',!query);}
 function switchTab(tab){if(!['personal','work','projects','assets'].includes(tab))return;currentTab=tab;query='';$('#site-search').value='';render();window.scrollTo({top:0,behavior:'smooth'});}
-function openEdit(category,id){if(!CATEGORY_META[category])return;editing={category,id};const item=(data[category]||[]).find(i=>i.id===id);$('#dialog-title').textContent=item?'링크 편집':'새 링크 추가';$('#edit-name').value=item?.name||'';$('#edit-url').value=item?.url||'';$('#edit-category').innerHTML=(currentTab==='work'?WORK_IDS:PERSONAL_IDS).map(k=>`<option value="${k}" ${k===category?'selected':''}>${CATEGORY_META[k].label}</option>`).join('');$('#delete-site').classList.toggle('hidden',!item);$('#site-dialog').showModal();$('#edit-name').focus();}
+function openEdit(category,id){if(!CATEGORY_META[category])return;if(category==='projects'&&!window.ProjectHub?.signedIn()){notify('개인 제작 사이트는 Supabase 로그인 후 저장할 수 있습니다.');window.ProjectHub.openLogin();return;}editing={category,id};const item=itemsFor(category).find(i=>i.id===id);$('#dialog-title').textContent=item?'링크 편집':'새 링크 추가';$('#edit-name').value=item?.name||'';$('#edit-url').value=item?.url||'';$('#edit-category').innerHTML=(currentTab==='work'?WORK_IDS:PERSONAL_IDS).map(k=>`<option value="${k}" ${k===category?'selected':''}>${CATEGORY_META[k].label}</option>`).join('');$('#delete-site').classList.toggle('hidden',!item);$('#site-dialog').showModal();$('#edit-name').focus();}
 function closeEdit(){$('#site-dialog').close();editing=null;}
 function notify(message){const toast=$('#toast');toast.textContent=message;toast.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.hidden=true,3400);}
-function submitEdit(ev){ev.preventDefault();if(!editing)return;const name=$('#edit-name').value.trim(),rawUrl=$('#edit-url').value.trim(),category=$('#edit-category').value;if(!name)return;let url=rawUrl;if(url&&!/^https?:\/\//i.test(url))url='https://'+url;if(url&&!isSafeUrl(url)){notify('올바른 http 또는 https 주소를 입력하세요.');return;}
-const oldList=data[editing.category]||[],old=oldList.find(s=>s.id===editing.id);const next={id:old?.id||('site-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)),name:name.slice(0,45),url,initial:old?.initial||name.slice(0,2).toUpperCase(),color:old?.color||'#b7baff',bg:old?.bg||'#293247'};if(old)data[editing.category]=oldList.filter(s=>s.id!==old.id);data[category].push(next);save();closeEdit();render();notify('사이트가 저장되었습니다.');}
-function deleteEdit(){if(!editing?.id)return;if(!confirm('이 사이트를 삭제할까요?'))return;data[editing.category]=data[editing.category].filter(s=>s.id!==editing.id);save();closeEdit();render();notify('사이트가 삭제되었습니다.');}
-function exportData(){const blob=new Blob([JSON.stringify({app:'myspace',version:1,exportedAt:new Date().toISOString(),links:data,projects:window.ProjectHub.exportData()},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='myspace-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('JSON 백업을 내보냈습니다.');}
-async function importData(file){if(!file)return;try{if(file.size>1_000_000)throw Error('파일 용량이 너무 큽니다.');const doc=JSON.parse(await file.text());if(doc.app!=='myspace'||doc.version!==1||!doc.links||typeof doc.links!=='object')throw Error('My Space 백업 형식이 아닙니다.');const backup=doc.links;const original=data;data=Object.assign(defaults(),backup);const clean=loadDataFromObject(data);data=clean;if(!save())data=original;else if(Array.isArray(doc.projects))await window.ProjectHub.importData(doc.projects);render();notify('백업을 가져왔습니다.');}catch(e){notify('가져오기 실패: '+e.message);}finally{$('#import-file').value='';}}
+let siteSaving=false;
+async function submitEdit(ev){
+ ev.preventDefault();if(!editing||siteSaving)return;
+ const name=$('#edit-name').value.trim(),rawUrl=$('#edit-url').value.trim(),category=$('#edit-category').value;
+ if(!name)return;let url=rawUrl;if(url&&!/^https?:\/\//i.test(url))url='https://'+url;
+ if(url&&!isSafeUrl(url)){notify('올바른 http 또는 https 주소를 입력하세요.');return;}
+ const touchesCloud=editing.category==='projects'||category==='projects';
+ if(touchesCloud&&!window.ProjectHub?.signedIn()){notify('개인 제작 사이트는 로그인 후 수정할 수 있습니다.');closeEdit();window.ProjectHub.openLogin();return;}
+ const source=itemsFor(editing.category),old=source.find(s=>s.id===editing.id);
+ const next={id:old?.id||('site-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)),name:name.slice(0,45),url,initial:old?.initial||name.slice(0,2).toUpperCase(),color:old?.color||'#b7baff',bg:old?.bg||'#293247'};
+ const from=source.filter(s=>s.id!==old?.id),to=editing.category===category?from:[...itemsFor(category)];to.push(next);
+ const btn=$('#site-form [type="submit"]');siteSaving=true;btn.disabled=true;
+ try{
+   if(touchesCloud)await window.ProjectHub.savePersonalSites(category==='projects'?to:from);
+   if(editing.category!=='projects')data[editing.category]=from;
+   if(category!=='projects')data[category]=to;
+   if(touchesCloud)data.projects=defaults().projects;
+   if(!save())throw Error('로컬 링크 저장에 실패했습니다.');
+   closeEdit();render();notify('사이트가 저장되었습니다. 다른 PC에서도 로그인하면 표시됩니다.');
+ }catch(err){notify('저장 실패: '+err.message);}
+ finally{siteSaving=false;btn.disabled=false;}
+}
+async function deleteEdit(){
+ if(!editing?.id||siteSaving)return;
+ if(!confirm('이 사이트를 삭제할까요?'))return;
+ const remaining=itemsFor(editing.category).filter(s=>s.id!==editing.id);
+ siteSaving=true;
+ try{
+   if(editing.category==='projects'){
+     if(!window.ProjectHub?.signedIn())throw Error('로그인이 필요합니다.');
+     await window.ProjectHub.savePersonalSites(remaining);data.projects=defaults().projects;
+   }else data[editing.category]=remaining;
+   if(!save())throw Error('로컬 저장에 실패했습니다.');
+   closeEdit();render();notify('사이트가 삭제되었습니다.');
+ }catch(err){notify('삭제 실패: '+err.message);}
+ finally{siteSaving=false;}
+}
+function exportData(){const blob=new Blob([JSON.stringify({app:'myspace',version:1,exportedAt:new Date().toISOString(),links:{...data,projects:itemsFor('projects')},projects:window.ProjectHub.exportData()},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='myspace-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('JSON 백업을 내보냈습니다.');}
+async function importData(file){
+ if(!file)return;
+ try{
+   if(file.size>1_000_000)throw Error('파일 용량이 너무 큽니다.');
+   const doc=JSON.parse(await file.text());
+   if(doc.app!=='myspace'||doc.version!==1||!doc.links||typeof doc.links!=='object')throw Error('My Space 백업 형식이 아닙니다.');
+   const clean=loadDataFromObject(Object.assign(defaults(),doc.links));
+   const synced=window.ProjectHub?.signedIn();
+   if(synced&&Array.isArray(doc.links.projects))await window.ProjectHub.savePersonalSites(clean.projects);
+   data=clean;
+   if(synced)data.projects=defaults().projects;
+   if(!save())throw Error('브라우저 저장소에 기록할 수 없습니다.');
+   if(Array.isArray(doc.projects))await window.ProjectHub.importData(doc.projects);
+   render();notify(synced?'백업과 클라우드 링크를 복원했습니다.':'백업을 가져왔습니다. 개인 제작 사이트는 Supabase 로그인 후 동기화됩니다.');
+ }catch(e){notify('가져오기 실패: '+e.message);}
+ finally{$('#import-file').value='';}
+}
 function loadDataFromObject(input){const base=defaults();Object.keys(base).forEach(k=>{if(Array.isArray(input[k]))base[k]=input[k].filter(x=>x&&typeof x.id==='string'&&typeof x.name==='string').slice(0,100).map(x=>({id:x.id.slice(0,80),name:x.name.slice(0,45),url:typeof x.url==='string'&&(!x.url||isSafeUrl(x.url))?x.url.slice(0,500):'',initial:typeof x.initial==='string'?x.initial.slice(0,3):'↗',color:typeof x.color==='string'&&/^#[0-9a-f]{6}$/i.test(x.color)?x.color:'#b7baff',bg:typeof x.bg==='string'&&/^#[0-9a-f]{6}$/i.test(x.bg)?x.bg:'#293247'}));});return base;}
 function setDate(){const now=new Date();$('#header-date').textContent=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',weekday:'long'}).format(now);$('#live-clock').textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hour12:false}).format(now);}
 function events(){document.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=icon(el.dataset.icon));document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
 $('#site-search').addEventListener('input',e=>{query=e.target.value.trim().toLocaleLowerCase();render();});$('#clear-search').addEventListener('click',()=>{$('#site-search').value='';query='';render();$('#site-search').focus();});
-$('#dashboard-grid').addEventListener('click',e=>{const btn=e.target.closest('[data-action]');if(btn){e.preventDefault();openEdit(btn.dataset.cat,btn.dataset.action==='edit'?btn.dataset.id:null);return;}const empty=e.target.closest('[data-empty="true"]');if(empty){e.preventDefault();openEdit(empty.dataset.cat,empty.dataset.id);}});
+$('#dashboard-grid').addEventListener('click',e=>{const btn=e.target.closest('[data-action]');if(btn){e.preventDefault();if(btn.dataset.action==='sync-login'){window.ProjectHub.openLogin();return;}if(btn.dataset.action==='sync-refresh'){void window.ProjectHub.refreshPersonalSites().then(()=>notify('클라우드에서 최신 사이트를 불러왔습니다.')).catch(err=>notify('동기화 실패: '+err.message));return;}openEdit(btn.dataset.cat,btn.dataset.action==='edit'?btn.dataset.id:null);return;}const empty=e.target.closest('[data-empty="true"]');if(empty){e.preventDefault();openEdit(empty.dataset.cat,empty.dataset.id);}});
 $('#site-form').addEventListener('submit',submitEdit);$('#close-dialog').addEventListener('click',closeEdit);$('#cancel-dialog').addEventListener('click',closeEdit);$('#delete-site').addEventListener('click',deleteEdit);
 $('#add-site-global').addEventListener('click',()=>{if(currentTab==='projects')window.ProjectHub.add();else openEdit(currentTab==='work'?'workapps':'projects',null);});$('#show-all').addEventListener('click',()=>{query='';$('#site-search').value='';render();window.scrollTo({top:0,behavior:'smooth'});});
 $('#export-json').addEventListener('click',exportData);$('#export-json-settings').addEventListener('click',exportData);$('#import-json-trigger').addEventListener('click',()=>$('#import-file').click());$('#import-file').addEventListener('change',e=>importData(e.target.files[0]));
-$('#open-settings').addEventListener('click',()=>$('#settings-dialog').showModal());$('#close-settings').addEventListener('click',()=>$('#settings-dialog').close());$('#reset-data').addEventListener('click',()=>{if(!confirm('추가하거나 수정한 모든 링크를 초기화합니다. 계속할까요?'))return;data=defaults();save();window.ProjectHub.reset();render();$('#settings-dialog').close();notify('기본 링크가 복원되었습니다.');});
+$('#open-settings').addEventListener('click',()=>$('#settings-dialog').showModal());$('#close-settings').addEventListener('click',()=>$('#settings-dialog').close());$('#reset-data').addEventListener('click',async()=>{if(!confirm('추가하거나 수정한 모든 링크를 초기화합니다. Supabase의 개인 제작 사이트도 초기화됩니다. 계속할까요?'))return;try{if(window.ProjectHub.signedIn())await window.ProjectHub.savePersonalSites(defaults().projects);data=defaults();if(!save())return;window.ProjectHub.reset();render();$('#settings-dialog').close();notify('기본 링크가 복원되었습니다.');}catch(err){notify('초기화 실패: '+err.message);}});
 document.addEventListener('keydown',e=>{if(currentTab!=='assets'&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#site-search').focus();$('#site-search').select();}if(e.key==='Escape'&&!$('#site-dialog').open&&!$('#settings-dialog').open&&query){query='';$('#site-search').value='';render();}});
 }
 
