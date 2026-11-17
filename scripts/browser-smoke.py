@@ -270,11 +270,12 @@ async def main():
         await expect(page.locator("#asset-dashboard")).to_be_empty()
         await page.locator('[data-asset-action="demo"]').click()
         state["allowed"] = False
+        financial_before_denied = state["financial"]
         passed("one top-right login unlocks assets, and global logout immediately hides private data")
         await expect(page.locator(".asset-stats .asset-stat").nth(0)).to_contain_text("95,000,000원")
         await expect(page.locator(".asset-stats .asset-stat").nth(1)).to_contain_text("85,000,000원")
         await expect(page.locator(".asset-mode-badge")).to_have_text("샘플 데이터")
-        assert state["financial"] == 0
+        assert state["financial"] == financial_before_denied
         await page.screenshot(path=str(screenshots / "assets-desktop.png"), full_page=True)
         for width in [360, 390, 768, 1440]:
             await page.set_viewport_size({"width": width, "height": 844})
@@ -290,7 +291,7 @@ async def main():
         await expect(page.locator("#asset-dashboard")).to_be_empty()
         await expect(page.locator("#lab-auth")).to_be_visible()
         assert await page.locator('[data-asset-form="login"]').count() == 0
-        assert state["financial"] == 0
+        assert state["financial"] == financial_before_denied
 
         async def login():
             await page.locator('#lab-login-form [name="email"]').fill("synthetic@example.test")
@@ -299,7 +300,7 @@ async def main():
 
         await login()
         await expect(page.locator("#lab-auth-error")).to_contain_text("등록된 본인 계정만")
-        assert state["financial"] == 0
+        assert state["financial"] == financial_before_denied
         passed("no financial requests before login/owner approval; unapproved user blocked")
         state["allowed"] = True
         await login()
