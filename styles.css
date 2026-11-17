@@ -19,3 +19,8 @@
 .work-empty button:hover{border-color:#a7a1ff;background:#2a3147}
 @media(max-width:1250px){#dashboard-grid.work-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){#dashboard-grid.work-grid{grid-template-columns:1fr}}
+
+/* Cloud login status for personal website shortcuts. */
+.sites-sync{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;margin:0 0 12px;border:1px solid #303447;border-radius:10px;background:#181c29;color:#bfc3d8;font-size:11px}
+.sites-sync button{flex-shrink:0;border:1px solid #5a5c8e;border-radius:7px;background:#282a45;color:#e4e6ff;padding:6px 10px;cursor:pointer}
+.sites-sync button:hover{background:#34385c}
