@@ -261,6 +261,7 @@ async def main():
         await page.locator("#reset-data").click()
         await expect(page.locator("#link-counter")).to_have_text("16 LINKS")
         passed("personal shortcuts persist across fresh login, edit/delete, JSON import/export, reset")
+        state["allowed"] = False  # Restore the denied-owner case for the following asset-security checks.
         
         await page.locator('[data-tab="assets"]').click()
         await expect(page.locator(".asset-stats .asset-stat").nth(0)).to_contain_text("95,000,000원")
