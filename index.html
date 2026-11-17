@@ -31,7 +31,7 @@
       </nav>
       <div class="side-bottom">
         <div class="sidebar-note"><span class="note-spark">✧</span><div><strong>Make it yours.</strong><p>매일 쓰는 공간을<br>조금 더 편리하게.</p></div></div>
-        <div class="profile"><div class="profile-avatar">M</div><span><strong>My Workspace</strong><small>Private · Local settings</small></span><span class="status-dot"></span></div>
+        <div class="profile"><div class="profile-avatar">M</div><span><strong>My Workspace</strong><small>Personal · Cloud sync</small></span><span class="status-dot"></span></div>
       </div>
     </aside>
 
@@ -55,7 +55,7 @@
   </div>
 
   <dialog id="site-dialog" class="editor-dialog" aria-labelledby="dialog-title"><form id="site-form" method="dialog"><div class="dialog-top"><div><span class="dialog-eyebrow">CUSTOMIZE YOUR SPACE</span><h2 id="dialog-title">링크 추가</h2></div><button class="icon-close" id="close-dialog" type="button" aria-label="닫기">×</button></div><label for="edit-name">사이트 이름</label><input id="edit-name" name="name" placeholder="예: My Portfolio" maxlength="45" required><label for="edit-url">사이트 주소 (https://)</label><input id="edit-url" name="url" type="text" inputmode="url" placeholder="https://example.com"><label for="edit-category">카테고리</label><select id="edit-category" name="category"></select><p class="helper-text" id="form-note">주소가 비어 있으면 빈 슬롯으로 저장됩니다.</p><div class="dialog-actions"><button class="danger-button hidden" type="button" id="delete-site">삭제</button><div class="action-spacer"></div><button type="button" class="ghost-button" id="cancel-dialog">취소</button><button type="submit" class="primary-button">저장하기</button></div></form></dialog>
-  <dialog id="settings-dialog" class="editor-dialog" aria-labelledby="settings-title"><div class="dialog-top"><div><span class="dialog-eyebrow">PREFERENCES</span><h2 id="settings-title">대시보드 설정</h2></div><button class="icon-close" id="close-settings" type="button" aria-label="닫기">×</button></div><p class="settings-copy">링크 변경사항은 현재 브라우저의 로컬 저장소에 보관됩니다. 다른 기기에서도 사용하려면 JSON 백업을 내보낸 뒤 불러오세요.</p><div class="setting-item"><div><strong>데이터 백업</strong><small>현재 사이트 목록을 JSON으로 저장합니다.</small></div><button class="ghost-button" id="export-json-settings" type="button">내보내기</button></div><div class="setting-item"><div><strong>기본값으로 초기화</strong><small>추가·수정한 링크가 모두 초기 상태로 돌아갑니다.</small></div><button class="danger-outline-button" id="reset-data" type="button">초기화</button></div></dialog>
+  <dialog id="settings-dialog" class="editor-dialog" aria-labelledby="settings-title"><div class="dialog-top"><div><span class="dialog-eyebrow">PREFERENCES</span><h2 id="settings-title">대시보드 설정</h2></div><button class="icon-close" id="close-settings" type="button" aria-label="닫기">×</button></div><p class="settings-copy">개인 제작 사이트는 Supabase에 로그인하면 모든 컴퓨터에 동기화됩니다. 나머지 일반 링크는 이 브라우저에 저장되며 JSON으로 백업할 수 있습니다.</p><div class="setting-item"><div><strong>데이터 백업</strong><small>현재 사이트 목록을 JSON으로 저장합니다.</small></div><button class="ghost-button" id="export-json-settings" type="button">내보내기</button></div><div class="setting-item"><div><strong>기본값으로 초기화</strong><small>추가·수정한 링크가 모두 초기 상태로 돌아갑니다.</small></div><button class="danger-outline-button" id="reset-data" type="button">초기화</button></div></dialog>
   <input id="import-file" type="file" accept="application/json,.json" hidden>
   <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
   <script src="projects.js" defer></script>
