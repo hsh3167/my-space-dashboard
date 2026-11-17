@@ -14,25 +14,39 @@ function privateControls() {
 
 export function mountWorkspace(root, { config = defaultConfig, storage = globalThis.localStorage, win = globalThis.window, clientFactory = c => new AssetClient(c) } = {}) {
   let client = null, mode = 'demo', data = null, message = '', busy = false, revision = 0, active = !root.hidden;
-  let unsubscribe, importer;
-  try { const saved = storage?.getItem(CONFIG_KEY); if (saved) config = JSON.parse(saved); validateConfig(config); client = clientFactory(config); } catch { /* An unconfigured project defaults to a public sample. */ }
+  const sharedAuth = win?.ProjectHub && typeof win.ProjectHub.onAuthChange === 'function' ? win.ProjectHub : null;
+  let unsubscribe, unsubscribeAuth, importer;
+  if (sharedAuth) client = sharedAuth.assetClient();
+  else {
+    try { const saved = storage?.getItem(CONFIG_KEY); if (saved) config = JSON.parse(saved); validateConfig(config); client = clientFactory(config); } catch { /* An unconfigured project defaults to a public sample. */ }
+  }
   function bindClient() { unsubscribe?.(); unsubscribe = client?.subscribe(state => {
     if (state === 'locked') { revision++; data = null; busy = false; }
     render();
   }); }
   bindClient();
+  if (sharedAuth) unsubscribeAuth = sharedAuth.onAuthChange((authorized, sharedClient) => {
+    revision++;data=null;busy=false;message='';
+    client=authorized?sharedClient:null;
+    bindClient();
+    if (authorized) mode='private';
+    render();
+    if (authorized && active) void load();
+  });
   function render() {
     importer?.destroy(); importer = null;
     const authorized = client?.state === 'authorized';
     let auth = '';
     if (mode === 'private') {
       auth = authorized
-        ? `<div class="asset-session"><span>본인 계정으로 연결됨 · 세션은 이 페이지에만 유지됩니다.</span><button type="button" class="ghost-button" data-asset-action="reload">새로고침</button><button type="button" class="ghost-button" data-asset-action="logout">로그아웃</button></div>`
-        : `<section class="asset-panel asset-login"><h3>내 자산 로그인</h3><p>자산관리 전용 로그인입니다. 기존 링크 작업 공간은 로그인 없이 이용할 수 있습니다.</p>${client ? `<form data-asset-form="login" class="asset-form"><label>이메일<input name="email" type="email" autocomplete="username" required></label><label>비밀번호<input name="password" type="password" autocomplete="current-password" required></label><button class="primary-button" type="submit" ${busy || client.state === 'authenticating' ? 'disabled' : ''}>로그인</button></form><p>본인으로 등록된 계정만 접근할 수 있습니다. <a href="./assets/password.html">비밀번호 처음 설정 / 재설정</a></p>` : '<p>Supabase 프로젝트를 먼저 생성한 뒤 공개 연결 정보를 설정해 주세요.</p>'}
-        <details><summary>Supabase 공개 연결 설정</summary><form data-asset-form="config" class="asset-form"><label>프로젝트 URL<input name="url" type="url" placeholder="https://project-id.supabase.co" required></label><label>공개 publishable / anon 키<input name="publishableKey" autocomplete="off" spellcheck="false" required></label><p>공개 연결 정보만 이 브라우저에 저장합니다. 비밀번호·service_role·secret 키를 입력하지 마세요.</p><button class="ghost-button" type="submit">연결 설정 저장</button></form></details></section>`;
+        ? `<div class="asset-session"><span>공통 계정으로 연결됨 · 우측 상단에서 로그아웃할 수 있습니다.</span><button type="button" class="ghost-button" data-asset-action="reload">새로고침</button></div>`
+        : sharedAuth
+          ? `<section class="asset-panel asset-login"><h3>로그인이 필요합니다</h3><p>우측 상단의 <strong>로그인</strong> 버튼으로 로그인하면 본인 자산이 표시됩니다.</p><p><a href="./assets/password.html">비밀번호 처음 설정 / 재설정</a></p></section>`
+          : `<section class="asset-panel asset-login"><h3>내 자산 로그인</h3><p>본인 계정으로 로그인하세요.</p>${client ? `<form data-asset-form="login" class="asset-form"><label>이메일<input name="email" type="email" autocomplete="username" required></label><label>비밀번호<input name="password" type="password" autocomplete="current-password" required></label><button class="primary-button" type="submit" ${busy || client.state === 'authenticating' ? 'disabled' : ''}>로그인</button></form><p><a href="./assets/password.html">비밀번호 처음 설정 / 재설정</a></p>` : '<p>Supabase 연결을 먼저 설정해 주세요.</p>'}
+          <details><summary>Supabase 공개 연결 설정</summary><form data-asset-form="config" class="asset-form"><label>프로젝트 URL<input name="url" type="url" required></label><label>공개 publishable / anon 키<input name="publishableKey" required></label><p>비밀 키와 비밀번호는 저장하지 마세요.</p><button class="ghost-button" type="submit">연결 설정 저장</button></form></details></section>`;
     }
     root.innerHTML = `<header class="asset-heading"><div><span class="asset-eyebrow">YOUR FINANCIAL WORKSPACE</span><h1>내 자산을, <em>한눈에.</em></h1><p>오늘의 자산부터 내일의 납부 일정까지.</p></div><span class="asset-mode-badge">${mode === 'demo' ? '샘플 데이터' : authorized ? '내 자산' : '로그인 필요'}</span></header>
-      <div class="asset-mode-actions"><button type="button" class="${mode === 'demo' ? 'primary-button' : 'ghost-button'}" data-asset-action="demo" aria-pressed="${mode === 'demo'}">샘플 보기</button><button type="button" class="${mode === 'private' ? 'primary-button' : 'ghost-button'}" data-asset-action="private" aria-pressed="${mode === 'private'}">내 자산 ${authorized ? '보기' : '로그인'}</button></div>
+      <div class="asset-mode-actions"><button type="button" class="${mode === 'demo' ? 'primary-button' : 'ghost-button'}" data-asset-action="demo" aria-pressed="${mode === 'demo'}">샘플 보기</button><button type="button" class="${mode === 'private' ? 'primary-button' : 'ghost-button'}" data-asset-action="private" aria-pressed="${mode === 'private'}">내 자산 보기</button></div>
       <p class="asset-notice">${mode === 'demo' ? '데모 화면입니다. 표시된 계좌·금액·종목은 모두 가상 데이터이며 실제 금융정보가 아닙니다.' : '금융정보는 로그인과 본인 확인 후에만 요청합니다. 공유 기기에서는 사용 후 로그아웃하세요.'}</p>
       <p id="asset-message" class="asset-message" role="status" aria-live="polite">${e(message || (busy ? '처리 중입니다…' : ''))}</p>
       <div id="asset-auth">${auth}</div><div id="asset-controls">${active && mode === 'private' && authorized ? privateControls() : ''}</div>
@@ -55,8 +69,14 @@ export function mountWorkspace(root, { config = defaultConfig, storage = globalT
   }
   root.addEventListener('click', event => {
     const action = event.target.closest('[data-asset-action]')?.dataset.assetAction;
-    if (action === 'demo' || action === 'private') { mode = action; revision++; data = null; message = ''; busy = false; render(); if (action === 'private') void load(); }
-    if (action === 'logout') { data = null; message = ''; busy = false; void client?.logout(); }
+    if (action === 'demo' || action === 'private') {
+      mode=action;revision++;data=null;message='';busy=false;render();
+      if (action === 'private') {
+        if (sharedAuth && !sharedAuth.signedIn()) sharedAuth.openLogin();
+        else void load();
+      }
+    }
+    if (action === 'logout') { data = null; message = ''; busy = false; if (sharedAuth) sharedAuth.logout(); else void client?.logout(); }
     if (action === 'reload') void load();
     const payment = event.target.closest('[data-payment-id]');
     if (payment && mode === 'private' && client?.state === 'authorized') void act(() => client.markPayment(payment.dataset.paymentId, payment.dataset.status), true);
@@ -83,12 +103,16 @@ export function mountWorkspace(root, { config = defaultConfig, storage = globalT
     }
   });
   const onWorkspace = event => {
-    active = event.detail.tab === 'assets'; revision++; data = null; busy = false;
-    if (!active) { message = ''; render(); } else { render(); if (mode === 'private') void load(); }
+    active=event.detail.tab==='assets';revision++;data=null;busy=false;
+    if (!active) {message='';render();}
+    else {
+      if (sharedAuth?.signedIn()) mode='private';
+      render();if (mode==='private')void load();
+    }
   };
   win.addEventListener('myspace:workspace', onWorkspace);
   render();
-  return { destroy() { importer?.destroy(); unsubscribe?.(); client?.lock(); win.removeEventListener('myspace:workspace', onWorkspace); root.replaceChildren(); } };
+  return { destroy() { importer?.destroy(); unsubscribe?.(); unsubscribeAuth?.(); if(!sharedAuth)client?.lock(); win.removeEventListener('myspace:workspace', onWorkspace); root.replaceChildren(); } };
 }
 
 if (typeof document !== 'undefined') {
