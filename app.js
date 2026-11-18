@@ -38,7 +38,7 @@ const CATEGORY_META = {
  workparts:{label:'부품 구매 사이트',sub:'부품 검색 및 가공품 견적',icon:'grid',accent:'teal'},
  worksystems:{label:'회사 시스템 사이트',sub:'필요한 사내 시스템을 직접 등록하세요',icon:'layers',accent:'blue'}
 };
-const PERSONAL_IDS=['portal','ai','dev','projects','social','media','storage'];
+const PERSONAL_IDS=['portal','ai','dev','social','media','storage'];
 const WORK_IDS=['workapps','workparts','worksystems'];
 function defaults(){return {
  office:[],
@@ -87,7 +87,7 @@ if(isProjects){
 }
 const categories=isWork?WORK_IDS:PERSONAL_IDS;let allItems=categories.flatMap(cat=>itemsFor(cat)),activeItems=allItems.filter(x=>isSafeUrl(x.url));$('#link-counter').textContent=`${activeItems.length} LINKS`;
 let html=categories.map(card).join('');
-if(!query&&!isWork)html+=`<section class="section-card nudge"><div class="nudge-icon">✧</div><h3>당신만의 공간으로<br>채워 보세요.</h3><p>사이트를 추가하거나 원하는 이름과<br>주소로 변경할 수 있습니다.</p><button type="button" data-action="add" data-cat="projects">개인 사이트 추가하기 →</button></section>`;
+if(!query&&!isWork)html+=`<section class="section-card nudge"><div class="nudge-icon">✧</div><h3>당신만의 공간으로<br>채워 보세요.</h3><p>사이트를 추가하거나 원하는 이름과<br>주소로 변경할 수 있습니다.</p><button type="button" data-action="add" data-cat="dev">개인 링크 추가하기 →</button></section>`;
 $('#dashboard-grid').classList.toggle('work-grid',isWork);$('#dashboard-grid').innerHTML=html||`<div class="empty-search"><h3>검색 결과가 없습니다.</h3><p>다른 검색어를 입력하거나 검색어를 지워보세요.</p></div>`;
 $('#clear-search').classList.toggle('hidden',!query);}
 function switchTab(tab){if(!['personal','work','projects','assets'].includes(tab))return;currentTab=tab;query='';$('#site-search').value='';render();window.scrollTo({top:0,behavior:'smooth'});}
@@ -155,9 +155,9 @@ function events(){document.querySelectorAll('[data-icon]').forEach(el=>el.innerH
 $('#site-search').addEventListener('input',e=>{query=e.target.value.trim().toLocaleLowerCase();render();});$('#clear-search').addEventListener('click',()=>{$('#site-search').value='';query='';render();$('#site-search').focus();});
 $('#dashboard-grid').addEventListener('click',e=>{const btn=e.target.closest('[data-action]');if(btn){e.preventDefault();if(btn.dataset.action==='sync-login'){window.ProjectHub.openLogin();return;}if(btn.dataset.action==='sync-refresh'){void window.ProjectHub.refreshPersonalSites().then(()=>notify('클라우드에서 최신 사이트를 불러왔습니다.')).catch(err=>notify('동기화 실패: '+err.message));return;}openEdit(btn.dataset.cat,btn.dataset.action==='edit'?btn.dataset.id:null);return;}const empty=e.target.closest('[data-empty="true"]');if(empty){e.preventDefault();openEdit(empty.dataset.cat,empty.dataset.id);}});
 $('#site-form').addEventListener('submit',submitEdit);$('#close-dialog').addEventListener('click',closeEdit);$('#cancel-dialog').addEventListener('click',closeEdit);$('#delete-site').addEventListener('click',deleteEdit);
-$('#add-site-global').addEventListener('click',()=>{if(currentTab==='projects')window.ProjectHub.add();else openEdit(currentTab==='work'?'workapps':'projects',null);});$('#show-all').addEventListener('click',()=>{query='';$('#site-search').value='';render();window.scrollTo({top:0,behavior:'smooth'});});
+$('#add-site-global').addEventListener('click',()=>{if(currentTab==='projects')window.ProjectHub.add();else openEdit(currentTab==='work'?'workapps':'dev',null);});$('#show-all').addEventListener('click',()=>{query='';$('#site-search').value='';render();window.scrollTo({top:0,behavior:'smooth'});});
 $('#export-json').addEventListener('click',exportData);$('#export-json-settings').addEventListener('click',exportData);$('#import-json-trigger').addEventListener('click',()=>$('#import-file').click());$('#import-file').addEventListener('change',e=>importData(e.target.files[0]));
-$('#open-settings').addEventListener('click',()=>$('#settings-dialog').showModal());$('#close-settings').addEventListener('click',()=>$('#settings-dialog').close());$('#reset-data').addEventListener('click',async()=>{if(!confirm('추가하거나 수정한 모든 링크를 초기화합니다. Supabase의 개인 제작 사이트도 초기화됩니다. 계속할까요?'))return;try{if(window.ProjectHub.signedIn())await window.ProjectHub.savePersonalSites(defaults().projects);data=defaults();if(!save())return;window.ProjectHub.reset();render();$('#settings-dialog').close();notify('기본 링크가 복원되었습니다.');}catch(err){notify('초기화 실패: '+err.message);}});
+$('#open-settings').addEventListener('click',()=>$('#settings-dialog').showModal());$('#close-settings').addEventListener('click',()=>$('#settings-dialog').close());$('#reset-data').addEventListener('click',async()=>{if(!confirm('일반 즐겨찾기 링크를 초기화합니다. Supabase의 개인 프로젝트는 유지됩니다. 계속할까요?'))return;try{data=defaults();if(!save())return;window.ProjectHub.reset();render();$('#settings-dialog').close();notify('기본 링크가 복원되었습니다.');}catch(err){notify('초기화 실패: '+err.message);}});
 document.addEventListener('keydown',e=>{if(currentTab!=='assets'&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#site-search').focus();$('#site-search').select();}if(e.key==='Escape'&&!$('#site-dialog').open&&!$('#settings-dialog').open&&query){query='';$('#site-search').value='';render();}});
 }
 
