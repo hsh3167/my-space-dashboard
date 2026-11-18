@@ -1,7 +1,7 @@
 import { AssetClient } from './client.mjs';
 
-// Separate project session, with the same verified single-owner login and 20-minute
-// expiration used by the private financial workspace. Credentials never persist.
+// Shared project and financial session, with a one-hour maximum duration.
+// Project catalog is anonymous and read-only; editing and financial data require owner auth.
 export class ProjectCloud {
   constructor(config, fetcher) {
     this.client = new AssetClient(config, fetcher);
@@ -11,16 +11,28 @@ export class ProjectCloud {
   get session() { return this.client.session; }
   async login(email, password) { await this.client.login(email, password); }
   async list() {
-    return await this.client.readAll('project_hub_projects?select=id,name,category,summary,notes,links&order=created_at.asc,id.asc');
+    return await this.client.readAll('project_hub_projects?select=id,name,category,summary,notes,links,is_public&order=created_at.asc,id.asc');
   }
+  async listPublic() {
+    // Explicit anonymous request: never send or reuse the private access token.
+    const response = await this.client.fetcher(this.client.config.url + '/rest/v1/project_hub_public?select=id,name,category,summary,links&order=created_at.asc,id.asc', {
+      method: 'GET', cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer',
+      headers: { apikey: this.client.config.publishableKey, 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) throw new Error('공개 프로젝트를 불러오지 못했습니다.');
+    const projects = await response.json();
+    if (!Array.isArray(projects)) throw new Error('공개 프로젝트 응답이 올바르지 않습니다.');
+    return projects;
+  }
+
   async create(record) {
-    const {id,name,category,summary,notes,links} = record;
-    return await this.client.request('project_hub_projects', { method:'POST', body:{ id,name,category,summary,notes,links } });
+    const {id,name,category,summary,notes,links,is_public} = record;
+    return await this.client.request('project_hub_projects', { method:'POST', body:{ id,name,category,summary,notes,links,is_public } });
   }
   async update(record) {
-    const {id,name,category,summary,notes,links} = record;
+    const {id,name,category,summary,notes,links,is_public} = record;
     return await this.client.request('project_hub_projects?id=eq.' + encodeURIComponent(id),
-      {method:'PATCH',body:{name,category,summary,notes,links,updated_at:new Date().toISOString()}});
+      {method:'PATCH',body:{name,category,summary,notes,links,is_public,updated_at:new Date().toISOString()}});
   }
   async remove(id) {
     return await this.client.request('project_hub_projects?id=eq.' + encodeURIComponent(id),{method:'DELETE'});
