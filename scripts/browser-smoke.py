@@ -43,7 +43,7 @@ async def main():
         "import {workbook} from './tests/xlsx-fixture.mjs'; process.stdout.write(workbook([['퇴직연금 합성 보유현황'],['종목명','수량','평가금액','매입금액'],['브라우저 합성 연금 ETF',2,24000,20000]]));"
     ], cwd=ROOT)
     projects = [
-        {"id": ident, "name": name, "category": category, "summary": "", "notes": "", "links": links}
+        {"id": ident, "name": name, "category": category, "summary": "", "notes": "PRIVATE-ONLY-NOTES", "links": links, "is_public": True}
         for ident,name,category,links in [
             ("f1","F1 Dashboard","web",[{"type":"github","label":"GitHub 저장소","url":"https://github.com/hsh3167/f1-dashboard"}]),
             ("lifting","리프팅 모듈","mechanical",[{"type":"github","label":"GitHub 저장소","url":"https://github.com/hsh3167/lifting-module-new-carti-"}]),
@@ -82,6 +82,11 @@ async def main():
         elif path == "/auth/v1/logout":
             state["verified"] = False
             result = {}
+        elif path.startswith("/rest/v1/project_hub_public?"):
+            assert not request.headers.get("authorization"), "Public project reads must not send an owner token"
+            assert request.method == "GET"
+            result = [{key: copy.deepcopy(p[key]) for key in ("id","name","category","summary","links")}
+                      for p in projects if p.get("is_public")]
         else:
             assert state["verified"], "Financial request before owner authorization"
             assert request.headers.get("authorization") == f"Bearer {TOKEN}"
@@ -166,10 +171,13 @@ async def main():
         context = await browser.new_context(viewport={"width": 1440, "height": 1000}, accept_downloads=True)
         page = await context.new_page()
         page.on("pageerror", lambda error: page_errors.append(str(error)))
+        async def config_route(route):
+            await route.fulfill(content_type="text/javascript", body="export default "+json.dumps({"url":PROJECT,"publishableKey":PUBLIC_KEY})+";")
+        await page.route("**/assets/public-config.mjs", config_route)
         await page.route(PROJECT + "/**", backend)
         await page.goto(BASE, wait_until="domcontentloaded")
         await expect(page.locator("#link-counter")).to_have_text("16 LINKS")
-        await expect(page.locator("#dashboard-grid .section-card")).to_have_count(8)
+        await expect(page.locator("#dashboard-grid .section-card")).to_have_count(7)
         await page.locator("#site-search").fill("ChatGPT")
         await expect(page.locator("#dashboard-grid .site-link")).to_have_count(1)
         await page.locator("#clear-search").click()
@@ -178,6 +186,7 @@ async def main():
         await page.locator('[data-tab="projects"]').click()
         await expect(page.locator("#grid-heading")).to_have_text("개인 프로젝트")
         await expect(page.locator(".lab-card")).to_have_count(6)
+        assert "PRIVATE-ONLY-NOTES" not in await page.locator("#dashboard-grid").inner_text()
         await expect(page.locator('.lab-card a[href="https://hsh3167.github.io/my-space-dashboard/"]')).to_have_count(1)
         await page.locator('.lab-card').filter(has_text="리프팅 모듈").locator('[data-project-action="detail"]').click()
         await expect(page.locator("#lab-detail")).to_contain_text("리프팅 모듈")
@@ -190,13 +199,14 @@ async def main():
         await page.locator('#lab-login-form [name="email"]').fill("synthetic@example.test")
         await page.locator('#lab-login-form [name="password"]').fill("synthetic-password")
         await page.locator('#lab-login-form [type="submit"]').click()
-        await expect(page.locator(".lab-sync strong")).to_contain_text("클라우드")
+        await expect(page.locator(".lab-sync strong")).to_contain_text("편집 가능")
         await expect(page.locator("#header-auth-button")).to_have_text("로그아웃")
         await page.locator('#dashboard-grid [data-project-action="add"]').click()
         await page.locator('#lab-form [name="name"]').fill("브라우저 합성 프로젝트")
         await page.locator('#lab-form [name="category"]').select_option("simulation")
         await page.locator('#lab-form .lab-label').fill("테스트 시뮬레이션")
         await page.locator('#lab-form .lab-url').fill("https://example.test/sim")
+        await page.locator('#lab-form [name="is_public"]').check()
         await page.locator('#lab-form [type="submit"]').click()
         await expect(page.locator(".lab-card")).to_have_count(7)
         await page.locator('#lab-detail [data-project-action="close-detail"]').first.click()
@@ -205,63 +215,40 @@ async def main():
         assert await page.evaluate("localStorage.getItem('myspace.project-lab.v1')") is None
         await page.reload(wait_until="domcontentloaded")
         await page.locator('[data-tab="projects"]').click()
-        await expect(page.locator('.lab-card a[href="https://example.test/sim"]')).to_have_count(0)
+        await expect(page.locator('.lab-card a[href="https://example.test/sim"]')).to_have_count(1)
+        assert "PRIVATE-ONLY-NOTES" not in await page.locator("#dashboard-grid").inner_text()
         await page.locator("#header-auth-button").click()
         await page.locator('#lab-login-form [name="email"]').fill("synthetic@example.test")
         await page.locator('#lab-login-form [name="password"]').fill("synthetic-password")
         await page.locator('#lab-login-form [type="submit"]').click()
         await expect(page.locator('.lab-card a[href="https://example.test/sim"]')).to_have_count(1)
         await page.locator("#header-auth-button").click()
-        await expect(page.locator('.lab-card a[href="https://example.test/sim"]')).to_have_count(0)
+        await expect(page.locator('.lab-card a[href="https://example.test/sim"]')).to_have_count(1)
         state["allowed"] = False
-        passed("cross-device cloud storage, relogin restore, no project data in browser storage")
+        passed("public projects survive reload and logout; private notes and credentials stay protected")
         passed("existing navigation and search")
 
         await page.locator('[data-tab="personal"]').click()
+        assert await page.locator("#dashboard-grid .section-card.projects").count() == 0
+        assert "개인 제작 사이트" not in await page.locator("#dashboard-grid").inner_text()
+        await page.locator("#add-site-global").click()
+        await expect(page.locator("#site-dialog")).to_be_visible()
+        await expect(page.locator("#edit-category")).to_have_value("dev")
+        await page.locator("#edit-name").fill("브라우저 도구")
+        await page.locator("#edit-url").fill("https://example.test/tool")
+        await page.locator('#site-form [type="submit"]').click()
+        await expect(page.locator('a[href="https://example.test/tool"]')).to_have_count(1)
+        assert state["personal_sites"] is None
+        passed("redundant personal websites removed; ordinary shortcuts still editable")
+
+        # Return to the common owner login for the asset-security scenarios.
         await page.locator("#header-auth-button").click()
         await expect(page.locator("#lab-auth")).to_be_visible()
         state["allowed"] = True
         await page.locator('#lab-login-form [name="email"]').fill("synthetic@example.test")
         await page.locator('#lab-login-form [name="password"]').fill("synthetic-password")
         await page.locator('#lab-login-form [type="submit"]').click()
-        await expect(page.locator(".sites-sync")).to_contain_text("Supabase")
-        await page.locator("#add-site-global").click()
-        await page.locator("#edit-name").fill("브라우저 합성 프로젝트")
-        await page.locator("#edit-url").fill("https://example.test/synthetic")
-        await page.locator('#site-form [type="submit"]').click()
-        link = page.locator('a[href="https://example.test/synthetic"]')
-        await expect(link).to_have_count(1)
-        assert any(s["url"] == "https://example.test/synthetic" for s in state["personal_sites"])
-        stored = await page.evaluate("localStorage.getItem('myspace.dashboard.v1')")
-        assert stored is None or "example.test/synthetic" not in stored
-        await page.reload(wait_until="domcontentloaded")
-        await expect(link).to_have_count(0)
-        await page.locator("#header-auth-button").click()
-        await page.locator('#lab-login-form [name="email"]').fill("synthetic@example.test")
-        await page.locator('#lab-login-form [name="password"]').fill("synthetic-password")
-        await page.locator('#lab-login-form [type="submit"]').click()
-        await expect(link).to_have_count(1)
-        edit = page.locator('.project-slot.filled').filter(has=link).locator('[data-action="edit"]')
-        await edit.click()
-        await page.locator("#edit-name").fill("브라우저 합성 수정")
-        await page.locator('#site-form [type="submit"]').click()
-        async with page.expect_download() as info:
-            await page.locator("#export-json").click()
-        download = await info.value
-        backup = json.loads(Path(await download.path()).read_text())
-        assert "accounts" not in backup["links"]
-        assert any(s["name"] == "브라우저 합성 수정" for s in backup["links"]["projects"])
-        await edit.click()
-        page.once("dialog", lambda dialog: dialog.accept())
-        await page.locator("#delete-site").click()
-        await expect(link).to_have_count(0)
-        await page.locator("#import-file").set_input_files({"name": "synthetic.json", "mimeType": "application/json", "buffer": json.dumps(backup).encode()})
-        await expect(link).to_have_count(1)
-        await page.locator("#open-settings").click()
-        page.once("dialog", lambda dialog: dialog.accept())
-        await page.locator("#reset-data").click()
-        await expect(page.locator("#link-counter")).to_have_text("16 LINKS")
-        passed("personal shortcuts persist across fresh login, edit/delete, JSON import/export, reset")
+        await expect(page.locator("#header-auth-button")).to_have_text("로그아웃")
         # The same top-right login must unlock real assets with no second sign-in.
         await page.locator('[data-tab="assets"]').click()
         await expect(page.locator("#asset-dashboard")).to_contain_text("합성 비공개")
