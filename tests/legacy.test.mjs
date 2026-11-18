@@ -17,7 +17,7 @@ test('existing personal/work/project navigation, search and assets boundary', as
   const dom = await app(); const { document: d, Event } = dom.window;
   try {
     assert.equal(d.querySelector('#link-counter').textContent, '16 LINKS');
-    assert.equal(d.querySelectorAll('#dashboard-grid .section-card').length, 8);
+    assert.equal(d.querySelectorAll('#dashboard-grid .section-card').length, 7);
     const search = d.querySelector('#site-search'); search.value = 'ChatGPT'; search.dispatchEvent(new Event('input'));
     assert.equal(d.querySelectorAll('#dashboard-grid .site-link').length, 1);
     d.querySelector('[data-tab="work"]').click();
@@ -25,7 +25,7 @@ test('existing personal/work/project navigation, search and assets boundary', as
     assert.equal(d.querySelectorAll('#dashboard-grid .section-card').length, 3);
     d.querySelector('[data-tab="projects"]').click();
     assert.equal(d.querySelector('#grid-heading').textContent, '개인 프로젝트');
-    assert.equal(d.querySelectorAll('#dashboard-grid .lab-card').length, 6);
+    assert.equal(d.querySelectorAll('#dashboard-grid .lab-card').length, 8);
     assert.ok(d.querySelector('a[href="https://hsh3167.github.io/my-space-dashboard/"]'));
     d.querySelector('[data-tab="assets"]').click();
     assert.equal(d.querySelector('#asset-workspace').hidden, false);
@@ -35,47 +35,31 @@ test('existing personal/work/project navigation, search and assets boundary', as
     assert.equal(d.querySelector('#link-counter').textContent, '16 LINKS');
   } finally { dom.window.close(); }
 });
-test('personal site links require login, save to cloud and stay out of browser storage', async () => {
+test('personal websites section is removed; shortcut editing stays local and project catalog is public', async () => {
   const dom = await app(); const { document:d, Event } = dom.window;
   try {
-    // An unauthenticated click must not silently write to the old localStorage key.
+    assert.equal(d.querySelectorAll('#dashboard-grid .section-card.projects').length, 0);
+    assert.doesNotMatch(d.querySelector('#dashboard-grid').textContent, /개인 제작 사이트/);
     d.querySelector('#add-site-global').click();
-    assert.equal(d.querySelector('#lab-auth').open,true);
-    assert.equal(dom.window.localStorage.getItem('myspace.dashboard.v1'),null);
-    d.querySelector('#lab-auth').close();
-
-    const slots=Array.from({length:5},(_,i)=>({id:'slot-'+(i+1),name:'사이트 '+String(i+1).padStart(2,'0'),url:'',initial:'+',color:'#a7a6cb',bg:'#252b3a'}));
-    let cloudSites=slots;
-    dom.window.ProjectHub.signedIn=()=>true;
-    dom.window.ProjectHub.personalSites=()=>cloudSites;
-    dom.window.ProjectHub.savePersonalSites=async sites=>{cloudSites=sites;};
-
-    d.querySelector('#add-site-global').click();
-    d.querySelector('#edit-name').value='Synthetic project';d.querySelector('#edit-url').value='example.com';
+    assert.equal(d.querySelector('#site-dialog').open,true);
+    assert.equal(d.querySelector('#edit-category').value,'dev');
+    assert.equal(d.querySelector('#lab-auth').open,false);
+    d.querySelector('#edit-name').value='Synthetic tool';
+    d.querySelector('#edit-url').value='https://example.com';
     d.querySelector('#site-form').dispatchEvent(new Event('submit',{cancelable:true}));
     await new Promise(resolve=>setTimeout(resolve,0));
-    assert.equal(cloudSites.at(-1).url,'https://example.com');
-    let saved=JSON.parse(dom.window.localStorage.getItem('myspace.dashboard.v1'));
-    assert.ok(!Object.hasOwn(saved,'projects'),'cloud links must not be copied to localStorage');
-    const id=cloudSites.at(-1).id;
-
-    d.querySelector(`button[data-id="${id}"]`).click();
-    d.querySelector('#edit-name').value='Edited project';
-    d.querySelector('#site-form').dispatchEvent(new Event('submit',{cancelable:true}));
-    await new Promise(resolve=>setTimeout(resolve,0));
-    assert.equal(cloudSites.at(-1).name,'Edited project');
-    d.querySelector(`button[data-id="${id}"]`).click();d.querySelector('#delete-site').click();
-    await new Promise(resolve=>setTimeout(resolve,0));
-    assert.equal(cloudSites.length,5);
-
+    assert.ok(d.querySelector('a[href="https://example.com"]'));
+    const saved=JSON.parse(dom.window.localStorage.getItem('myspace.dashboard.v1'));
+    assert.ok(saved.dev.some(x=>x.name==='Synthetic tool'));
     let backup;
     dom.window.Blob=class{constructor(parts){this.parts=parts;}};
     dom.window.URL.createObjectURL=blob=>{backup=JSON.parse(blob.parts[0]);return 'blob:synthetic';};
     dom.window.URL.revokeObjectURL=()=>{};
     dom.window.HTMLAnchorElement.prototype.click=()=>{};
     d.querySelector('#export-json').click();
-    assert.equal(backup.app,'myspace');assert.equal(backup.links.workapps.length,4);
-    assert.equal(backup.links.projects.length,5);assert.equal(backup.projects.length,6);
+    assert.equal(backup.app,'myspace');
+    assert.equal(backup.links.workapps.length,4);
+    assert.equal(backup.projects.length,8);
     assert.equal(Object.keys(backup.links).includes('assets'),false);
   } finally { dom.window.close(); }
 });
