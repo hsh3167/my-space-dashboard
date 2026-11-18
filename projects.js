@@ -27,6 +27,7 @@
       category: Object.hasOwn(CATEGORY_NAMES,raw.category) ? raw.category : "other",
       summary: String(raw.summary || "").slice(0,400),
       notes: String(raw.notes || "").slice(0,3000),
+      is_public: raw.is_public === true,
       links: Array.isArray(raw.links) ? raw.links.slice(0,20).filter(x => x && safe(x.url)).map(x => ({
         type:Object.hasOwn(TYPE_NAMES,x.type) ? x.type : "other",
         label:String(x.label || TYPE_NAMES[x.type] || "자료").slice(0,75),
@@ -56,7 +57,19 @@
     } catch { /* Fall back to the starter collection. */ }
     return initial();
   }
-  let items = read(), selected = null, editing = null, filter = "all";
+  // Latest owner-approved public catalog snapshot. Database remains authoritative online.
+  const publicFallback = () => {
+    const base=defaults().map(p=>({...p,notes:"",is_public:true,links:p.links.map(l=>({...l}))}));
+    base.find(p=>p.id==="f1").links.push({type:"web",label:"웹페이지",url:"https://hsh3167.github.io/f1-dashboard/"});
+    base.find(p=>p.id==="cruze").links.push({type:"web",label:"웹페이지",url:"https://hsh3167.github.io/cruze-mechanical-lab/"});
+    base.push({id:"project-1794929106616-1h7qd",name:"대학생 amr project",category:"robotics",summary:"대학생들과 함께 진행하고 있는 amr project",notes:"",is_public:true,
+      links:[{type:"web",label:"AMR PROJECT",url:"https://hsh3167.github.io/amr_project/?rev=07"}]});
+    base.push({id:"project-1794929938135-ccvxh",name:"카트레이싱 게임",category:"other",summary:"",notes:"",is_public:true,
+      links:[{type:"web",label:"게임",url:"https://hsh3167.github.io/blog/kart-racing/?utm_source=chatgpt.com"}]});
+    return base;
+  };
+  let publicItems=publicFallback();
+  let items=publicItems, selected = null, editing = null, filter = "all";
   let cloud = null, ready = false, busy = false, cloudPromise = null, cloudMessage = "";
   let personalSites = null;
   const authObservers = new Set();
@@ -95,7 +108,7 @@
       cloud = new module.ProjectCloud(connection);
       cloud.subscribe(state => {
         if (state === "locked") {
-          ready = false; items = defaults(); personalSites = null;
+          ready = false; items = publicItems; personalSites = null;
           emitAuth();
           if (editDialog.open) editDialog.close();
           if (detailDialog.open) detailDialog.close();
@@ -105,6 +118,18 @@
       return cloud;
     }).catch(err => { cloudPromise = null; throw err; });
     return await cloudPromise;
+  }
+  // Only public, approved fields are retrieved before login.
+  async function reloadPublic() {
+    try {
+      const client=await ensureCloud();
+      const rows=(await client.listPublic()).map(clean).filter(Boolean);
+      publicItems=rows;
+      if(!hasSession())items=publicItems;
+      refresh();
+    } catch {
+      // A previously loaded safe list remains available while offline.
+    }
   }
   // First successful login migrates locally saved projects without replacing newer
   // cloud records. Only confirmed uploads remove the old localStorage data.
@@ -192,7 +217,9 @@
     clearMigratedSnapshot();
   }
   function logout() {
-    ready=false;items=defaults();personalSites=null;
+    ready=false;items=publicItems;personalSites=null;
+    if(editDialog.open)editDialog.close();
+    if(detailDialog.open)detailDialog.close();
     void cloud?.logout();
     emitAuth();
     refresh();
@@ -200,7 +227,7 @@
   function promptLogin() {
     if (authDialog.open) return;
     authDialog.innerHTML = '<form id="lab-login-form"><div class="lab-dialog-top"><span class="lab-overline">MY SPACE ACCOUNT</span><button class="lab-x" type="button" data-project-action="close-auth" aria-label="닫기">×</button></div>' +
-      '<h2>My Space 로그인</h2><p class="lab-muted">한 번 로그인하면 개인 제작 사이트·개인 프로젝트·내 자산을 모두 사용할 수 있습니다. 20분 뒤 자동 로그아웃됩니다.</p>' +
+      '<h2>My Space 로그인</h2><p class="lab-muted">한 번 로그인하면 개인 프로젝트 편집과 내 자산 확인을 할 수 있습니다. 1시간 뒤 자동 로그아웃됩니다.</p>' +
       '<label>이메일<input name="email" type="email" autocomplete="username" required></label>' +
       '<label>비밀번호<input name="password" type="password" autocomplete="current-password" required></label>' +
       '<p role="alert" class="lab-error" id="lab-auth-error"></p><div class="lab-dialog-actions"><button type="button" class="lab-secondary" data-project-action="close-auth">취소</button><button type="submit" class="lab-add">로그인</button></div></form>';
@@ -221,6 +248,7 @@
       await migratePersonalSites();
       ready = true; cloudMessage = "Supabase 동기화 완료";
       emitAuth();
+      void reloadPublic();
       if (authDialog.open) authDialog.close();
       refresh();
     } catch(e) {
@@ -235,6 +263,7 @@
     try {
       items=(await cloud.list()).map(clean).filter(Boolean);
       personalSites=cleanSites(await cloud.listPersonalSites());
+      await reloadPublic();
       cloudMessage="Supabase 최신 데이터";
     }
     catch(e) {cloudMessage="새로고침 실패: "+e.message;}
@@ -409,4 +438,5 @@
     }
   };
   emitAuth();
+  void reloadPublic();
 })();
