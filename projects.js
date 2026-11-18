@@ -280,7 +280,7 @@
     return '<article class="lab-card"><div class="lab-card-top"><span class="lab-card-icon" aria-hidden="true">'+icon+'</span><span class="lab-kind">'+el(category)+'</span></div>'+
       '<div class="lab-card-copy"><h3>'+el(item.name)+'</h3><p>'+el(item.summary || "설명을 추가해 주세요.")+'</p></div>'+
       '<div class="lab-card-footer"><button type="button" class="lab-secondary" data-project-action="detail" data-project-id="'+el(item.id)+'">상세보기</button>'+
-      (live ? anchor(live,"lab-launch","실행 / 웹페이지") : '<button type="button" class="lab-launch missing" data-project-action="edit" data-project-id="'+el(item.id)+'">+ 실행 링크 등록</button>')+
+      (live ? anchor(live,"lab-launch","실행 / 웹페이지") : (hasSession()?'<button type="button" class="lab-launch missing" data-project-action="edit" data-project-id="'+el(item.id)+'">+ 실행 링크 등록</button>':'<span class="lab-kind">링크 준비 중</span>'))+
       '</div></article>';
   }
   function render(search) {
@@ -289,13 +289,13 @@
       (!q || [p.name,p.category,p.summary,p.notes,...p.links.map(l => l.label+" "+l.url)].join(" ").toLocaleLowerCase().includes(q)));
     const chips = Object.entries({all:"전체",...CATEGORY_NAMES}).map(([key,name]) => '<button type="button" class="lab-chip'+(filter===key?" active":"")+'" data-project-action="filter" data-project-filter="'+key+'" aria-pressed="'+(filter===key)+'">'+el(name)+'</button>').join("");
     const signedIn=hasSession();
-    const authBar='<div class="lab-sync"><div><strong>'+ (signedIn ? "● 클라우드 연결됨" : "○ 로그인 필요") + '</strong><p>'+ (signedIn ? "프로젝트 데이터가 본인 계정에 동기화됩니다." : "우측 상단 로그인 후 모든 컴퓨터에서 동일한 프로젝트를 열고 편집할 수 있습니다.") + '</p></div><div class="lab-sync-actions">'+
+    const authBar='<div class="lab-sync"><div><strong>'+ (signedIn ? "● 로그인됨 · 편집 가능" : "● 공개 프로젝트") + '</strong><p>'+ (signedIn ? "프로젝트 수정 및 메모는 본인 계정에 저장됩니다." : "공개 프로젝트는 로그인 없이 볼 수 있습니다. 추가·수정 및 개인 메모 확인은 로그인 후 가능합니다.") + '</p></div><div class="lab-sync-actions">'+
       (signedIn ? '<button class="lab-secondary" type="button" data-project-action="refresh-cloud">동기화</button>' : '')+'</div></div>';
     return '<div class="lab-board">'+authBar+'<div class="lab-intro"><div><span class="lab-overline">PERSONAL DEVELOPMENT LAB</span><h2>내가 만든 프로젝트를 한곳에.</h2><p>GitHub · Google Drive · ChatGPT · 웹 시뮬레이터를 프로젝트 단위로 관리합니다.</p></div><button type="button" class="lab-add" data-project-action="add">+ 프로젝트 추가</button></div>'+
       '<div class="lab-stats"><span><b>'+items.length+'</b> 전체 프로젝트</span><span><b>'+items.filter(p=>p.links.some(l=>l.type==="github")).length+'</b> GitHub 연결</span><span><b>'+items.filter(p=>jump(p)).length+'</b> 실행 링크</span></div>'+
       '<div class="lab-chips" aria-label="프로젝트 분류">'+chips+'</div>'+
       '<div class="lab-grid">'+(display.map(card).join("") || '<p class="lab-empty">일치하는 프로젝트가 없습니다. 검색어 또는 분류를 변경해 보세요.</p>')+'</div>'+
-      '<p class="lab-privacy">로그인 시 개인 프로젝트의 이름·주소·메모가 본인 전용 Supabase에 저장됩니다. 로그인 세션과 비밀번호는 브라우저 저장소에 보관되지 않습니다. 회사 기밀이나 비밀번호를 입력하지 마세요.</p></div>';
+      '<p class="lab-privacy">공개 프로젝트의 이름·설명·HTTPS 링크는 누구나 볼 수 있습니다. 작업 메모와 자산은 본인 계정에 보호됩니다. 로그인 세션과 비밀번호는 브라우저에 저장되지 않습니다.</p></div>';
   }
   const detailDialog = document.createElement("dialog"); detailDialog.id = "lab-detail"; detailDialog.className = "lab-dialog";
   const editDialog = document.createElement("dialog"); editDialog.id = "lab-editor"; editDialog.className = "lab-dialog";
@@ -306,10 +306,10 @@
     const list = p.links.map(l => '<div class="lab-resource"><span><strong>'+el(l.label)+'</strong><small>'+el(TYPE_NAMES[l.type])+'</small></span>'+anchor(l,"lab-resource-link","열기")+'</div>').join("");
     detailDialog.innerHTML = '<div class="lab-dialog-top"><span class="lab-overline">'+el(CATEGORY_NAMES[p.category])+' / PROJECT DETAIL</span><button type="button" class="lab-x" data-project-action="close-detail" aria-label="닫기">×</button></div>'+
       '<h2>'+el(p.name)+'</h2><p class="lab-desc">'+el(p.summary)+'</p>'+
-      (live ? '<div class="lab-primary-row">'+anchor(live,"lab-launch","웹페이지 / 시뮬레이션 실행")+'</div>' : '<div class="lab-primary-row"><button type="button" class="lab-launch missing" data-project-action="edit" data-project-id="'+el(p.id)+'">+ 웹페이지 / 시뮬레이션 링크 등록</button></div>')+
+      (live ? '<div class="lab-primary-row">'+anchor(live,"lab-launch","웹페이지 / 시뮬레이션 실행")+'</div>' : (hasSession()?'<div class="lab-primary-row"><button type="button" class="lab-launch missing" data-project-action="edit" data-project-id="'+el(p.id)+'">+ 웹페이지 / 시뮬레이션 링크 등록</button></div>':''))+
       '<h3>관련 자료</h3>'+(list || '<p class="lab-muted">등록한 자료 링크가 없습니다.</p>')+
-      '<h3>작업 메모</h3><p class="lab-notes">'+el(p.notes || "메모가 없습니다.")+'</p>'+
-      '<div class="lab-dialog-actions"><button type="button" class="lab-secondary" data-project-action="close-detail">닫기</button><button type="button" class="lab-add" data-project-action="edit" data-project-id="'+el(p.id)+'">프로젝트 수정</button></div>';
+      (hasSession()?'<h3>작업 메모</h3><p class="lab-notes">'+el(p.notes || "메모가 없습니다.")+'</p>':'')+
+      '<div class="lab-dialog-actions"><button type="button" class="lab-secondary" data-project-action="close-detail">닫기</button>'+(hasSession()?'<button type="button" class="lab-add" data-project-action="edit" data-project-id="'+el(p.id)+'">프로젝트 수정</button>':'')+'</div>';
     if (!detailDialog.open) detailDialog.showModal();
   }
   function linkRow(l={type:"github",label:"",url:""}) {
@@ -318,7 +318,7 @@
   }
   function edit(id) {
     if (!hasSession()) {promptLogin();return;}
-    editing = id || null; const p = byId(id) || {name:"",category:"mechanical",summary:"",notes:"",links:[]};
+    editing = id || null; const p = byId(id) || {name:"",category:"mechanical",summary:"",notes:"",links:[],is_public:false};
     if (detailDialog.open) detailDialog.close();
     const categories=Object.entries(CATEGORY_NAMES).map(([key,name])=>'<option value="'+key+'"'+(key===p.category?" selected":"")+'>'+el(name)+'</option>').join("");
     editDialog.innerHTML = '<form id="lab-form"><div class="lab-dialog-top"><span class="lab-overline">PROJECT EDITOR</span><button type="button" class="lab-x" data-project-action="close-edit" aria-label="닫기">×</button></div>'+
@@ -327,6 +327,8 @@
       '<label>카테고리<select name="category">'+categories+'</select></label>'+
       '<label>프로젝트 설명<textarea name="summary" rows="2" maxlength="400">'+el(p.summary)+'</textarea></label>'+
       '<label>작업 메모<textarea name="notes" rows="4" maxlength="3000">'+el(p.notes)+'</textarea></label>'+
+      '<label class="lab-visibility"><input type="checkbox" name="is_public" '+(p.is_public?'checked':'')+'> 로그인하지 않아도 프로젝트 표시</label>'+
+      '<p class="lab-muted">공개하면 프로젝트 이름·설명·HTTPS 링크를 누구나 볼 수 있습니다. 작업 메모와 자산은 공개되지 않습니다. 회사 내부 자료는 공개하지 마세요.</p>'+
       '<div class="lab-link-title"><strong>관련 자료 및 실행 링크</strong><button type="button" class="lab-secondary" data-project-action="add-link">+ 링크 추가</button></div>'+
       '<p class="lab-muted">웹페이지 또는 시뮬레이션 유형을 선택하면 카드에 실행 버튼이 표시됩니다.</p>'+
       '<div id="lab-link-rows">'+(p.links.length?p.links.map(linkRow).join(""):linkRow({type:"web",label:"",url:""}))+'</div>'+
@@ -352,12 +354,12 @@
     if (error) {form.querySelector("#lab-form-error").textContent=error;return;}
     if (!hasSession() || busy) {form.querySelector("#lab-form-error").textContent="로그인이 필요합니다.";return;}
     const id=editing || "project-"+Date.now()+"-"+Math.random().toString(36).slice(2,7);
-    const record=clean({id,name,category,summary:form.elements.summary.value,notes:form.elements.notes.value,links});
+    const record=clean({id,name,category,summary:form.elements.summary.value,notes:form.elements.notes.value,links,is_public:form.elements.is_public.checked});
     busy=true; const button=form.querySelector('[type="submit"]');button.disabled=true;
     try {
       await (editing ? cloud.update(record) : cloud.create(record));
       items = (await cloud.list()).map(clean).filter(Boolean);
-      closeEdit();selected=id;refresh();detail(id);
+      await reloadPublic();closeEdit();selected=id;refresh();detail(id);
     } catch(e) {form.querySelector("#lab-form-error").textContent="저장 실패: "+e.message;}
     finally {busy=false;button.disabled=false;refresh();}
   }
@@ -380,7 +382,7 @@
       if (window.confirm("Supabase의 프로젝트와 연결된 메모·링크를 삭제하시겠습니까?")) {
         void (async()=>{if(busy)return;busy=true;try {
           await cloud.remove(id);
-          items=items.filter(p=>p.id!==id);closeEdit();refresh();
+          items=items.filter(p=>p.id!==id);await reloadPublic();closeEdit();refresh();
         }catch(e){editDialog.querySelector("#lab-form-error").textContent="삭제 실패: "+e.message;}
         finally{busy=false;refresh();}})();
       }
@@ -415,7 +417,7 @@
     reset:()=>{
       // Global link reset must never silently delete synchronized projects.
       localStorage.removeItem(KEY);
-      if(!hasSession()){items=defaults();refresh();}
+      if(!hasSession()){items=publicItems;refresh();}
     },
     signedIn:hasSession,
     openLogin:promptLogin,
