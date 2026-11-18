@@ -73,3 +73,7 @@
 #lab-login-form input:focus{border-color:#6ab9f7;box-shadow:0 0 0 3px #3b9fea22}
 .lab-add:disabled{opacity:.65;cursor:wait}
 @media(max-width:740px){.lab-sync{flex-direction:column;align-items:flex-start}.lab-sync-actions{width:100%;flex-wrap:wrap}}
+
+/* Project catalog visibility is explicit, and never exposes private notes. */
+.lab-visibility{display:flex!important;flex-direction:row!important;align-items:center;gap:10px;cursor:pointer;margin:12px 0 4px;font-weight:650}
+.lab-visibility input{width:18px!important;height:18px!important;margin:0;accent-color:#9183ed;flex:0 0 auto}
