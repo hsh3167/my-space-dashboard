@@ -141,10 +141,13 @@
     const tasks = [];
     for (const p of staged) {
       const existing = remoteById.get(p.id), seed = defaults().find(x => x.id === p.id);
+      // Older backups have no publishing flag: never override an existing project's visibility.
+      if (existing) p.is_public = existing.is_public;
+      const matchesSeed = seed && JSON.stringify({...clean(p),is_public:false}) === JSON.stringify({...clean(seed),is_public:false});
       if (!existing) {
         // Do not resurrect defaults deleted on another device.
-        if (!seed || (legacyPresent && !same(p,seed))) tasks.push({type:"create",p});
-      } else if (legacyPresent && !same(p,existing) && (!seed || !same(p,seed))) {
+        if (!seed || (legacyPresent && !matchesSeed)) tasks.push({type:"create",p});
+      } else if (legacyPresent && !same(p,existing) && (!seed || !matchesSeed)) {
         // Never discard conflicting personal notes/URLs. Keep a separately labeled copy
         // when both local and remote versions were independently edited.
         if (seed && same(existing,seed)) tasks.push({type:"update",p});
@@ -409,8 +412,14 @@
       busy=true;
       try {
         const currentIds=new Set(items.map(p=>p.id));
-        for(const p of incoming) await (currentIds.has(p.id)?cloud.update(p):cloud.create(p));
+        for(const p of incoming) {
+          const original=raw.find(x=>x&&x.id===p.id);
+          const existing=items.find(x=>x.id===p.id);
+          if(existing && !Object.hasOwn(original||{},'is_public'))p.is_public=existing.is_public;
+          await (currentIds.has(p.id)?cloud.update(p):cloud.create(p));
+        }
         items=(await cloud.list()).map(clean).filter(Boolean);
+        await reloadPublic();
         refresh();
       }finally{busy=false;}
     },
