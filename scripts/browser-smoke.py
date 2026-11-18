@@ -356,7 +356,7 @@ async def main():
         await expect(page.locator("#asset-import")).to_have_count(0)
         assert "합성 비공개" not in await page.locator("#asset-workspace").inner_text()
         await page.locator('[data-tab="personal"]').click()
-        await expect(page.locator("#link-counter")).to_have_text("16 LINKS")
+        await expect(page.locator("#link-counter")).to_have_text("17 LINKS")
         passed("logout clears financial/upload UI during in-flight data read; legacy tabs remain public")
 
         await page.goto(BASE + "/?view=assets", wait_until="domcontentloaded")
